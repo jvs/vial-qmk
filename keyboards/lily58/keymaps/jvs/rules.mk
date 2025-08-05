@@ -20,8 +20,7 @@ LEADER_ENABLE = yes
 # Combo support
 COMBO_ENABLE = yes
 
-# OLED source files
+# OLED source files (removed keylogger for security)
 SRC +=  ./lib/rgb_state_reader.c \
         ./lib/layer_state_reader.c \
-        ./lib/logo_reader.c \
-        ./lib/keylogger.c \
+        ./lib/logo_reader.c
