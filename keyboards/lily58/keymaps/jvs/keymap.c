@@ -15,7 +15,7 @@ enum custom_keycodes {
     CKC_M,   // M with RAlt hold
     CKC_COMM, // , with RCtrl hold
     SMTD_KEYCODES_END,
-    
+
     // Leader sequences
     LD_AM = SMTD_KEYCODES_END,
     LD_AT,
@@ -62,7 +62,7 @@ enum custom_keycodes {
     LD_UN,
     LD_US,
     LD_Z,
-    
+
     // Vim mode keys
     VIM_H,
     VIM_J,
@@ -110,8 +110,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  * | Tab  |   Q  |   W  |   E  |   R  |   T  |                    |   Y  |   U  |   I  |   O  |   P  |  -   |
  * |------+------+------+------+------+------|                    |------+------+------+------+------+------|
  * |LCtrl |   A  |   S  | D/LC | F/LA |   G  |-------.    ,-------|   H  |   J  |   K  |   L  |   ;  |  '   |
- * |------+------+------+------+------+------|   [   |    |    ]  |------+------+------+------+------+------|
- * | LAlt |LShift|   Z  |   X  |   C  |   V  |-------|    |-------|   B  |   N  | M/RA |,/RCtl|   .  |  /   |
+ * |------+------+------+------+------+------|   B   |    |    B  |------+------+------+------+------+------|
+ * | LAlt |LShift|   Z  |   X  |   C  |   V  |-------|    |-------|   N  | M/RA |,/RCtl|   .  |   /  |RShift|
  * `-----------------------------------------/       /     \      \-----------------------------------------'
  *                   | LGUI |Lower |LShift| /Leader /       \Enter \  |Space |Raise |Number|
  *                   |      |      |      |/       /         \      \ |      |      |      |
@@ -122,7 +122,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   KC_ESC,   KC_1,   KC_2,    KC_3,    KC_4,    KC_5,                     KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    KC_BSPC,
   KC_TAB,   KC_Q,   KC_W,    KC_E,    KC_R,    KC_T,                     KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,    KC_MINS,
   KC_LCTL,  KC_A,   KC_S,    CKC_D,   CKC_F,   KC_G,                     KC_H,    KC_J,    KC_K,    KC_L,    KC_SCLN, KC_QUOT,
-  KC_LALT,  KC_LSFT,KC_Z,    KC_X,    KC_C,    KC_V, KC_LBRC,  KC_RBRC,  KC_B,    KC_N,    CKC_M,   CKC_COMM,KC_DOT,  KC_SLSH,
+  KC_LALT,  KC_LSFT,KC_Z,    KC_X,    KC_C,    KC_V, KC_B,        KC_B,  KC_N,    CKC_M,   CKC_COMM,KC_DOT,  KC_SLSH, KC_RSFT,
                         KC_LGUI, MO(_LOWER), KC_LSFT, QK_LEAD, KC_ENT, KC_SPC, MO(_RAISE), MO(_NUMBER)
 ),
 
@@ -175,11 +175,11 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  * ,-----------------------------------------.                    ,-----------------------------------------.
  * |  F1  |  F2  |  F3  |  F4  |  F5  |  F6  |                    |  F7  |  F8  |  F9  | F10  | F11  | F12  |
  * |------+------+------+------+------+------|                    |------+------+------+------+------+------|
- * |      |      |   1  |   2  |   3  |   0  |                    |      |      |      |      |      |      |
+ * |      |      |   3  |   2  |   1  |   0  |                    |      |      |      |      |      |      |
  * |------+------+------+------+------+------|                    |------+------+------+------+------+------|
- * |      |      |   4  |   5  |   6  |   0  |-------.    ,-------|OSM_AL|OSM_CT|OSM_SH|OSM_GU|      |      |
+ * |      |      |   6  |   5  |   4  |   0  |-------.    ,-------|OSM_AL|OSM_CT|OSM_SH|OSM_GU|      |      |
  * |------+------+------+------+------+------|       |    |       |------+------+------+------+------+------|
- * |      |      |   7  |   8  |   9  |   0  |-------|    |-------|      |      |      |      |      |      |
+ * |      |      |   9  |   8  |   7  |   0  |-------|    |-------|      |      |      |      |      |      |
  * `-----------------------------------------/       /     \      \-----------------------------------------'
  *                   |      |   0  |   .  | / Bksp  /       \      \  |      |TO(0) |Number|
  *                   |      |      |      |/       /         \      \ |      |      |      |
@@ -187,9 +187,9 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  */
 [_NUMBER] = LAYOUT(
   KC_F1,   KC_F2,   KC_F3,   KC_F4,   KC_F5,   KC_F6,                     KC_F7,   KC_F8,   KC_F9,   KC_F10,  KC_F11,  KC_F12,
-  XXXXXXX, XXXXXXX, KC_1,    KC_2,    KC_3,    KC_0,                      XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,
-  XXXXXXX, XXXXXXX, KC_4,    KC_5,    KC_6,    KC_0,                      OSM(MOD_LALT), OSM(MOD_LCTL), OSM(MOD_RSFT), OSM(MOD_RGUI), XXXXXXX, XXXXXXX,
-  XXXXXXX, XXXXXXX, KC_7,    KC_8,    KC_9,    KC_0, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,
+  XXXXXXX, XXXXXXX, KC_3,    KC_2,    KC_1,    KC_0,                      XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,
+  XXXXXXX, XXXXXXX, KC_6,    KC_5,    KC_4,    KC_0,                      OSM(MOD_LALT), OSM(MOD_LCTL), OSM(MOD_RSFT), OSM(MOD_RGUI), XXXXXXX, XXXXXXX,
+  XXXXXXX, XXXXXXX, KC_9,    KC_8,    KC_7,    KC_0, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,
                              XXXXXXX, KC_0, KC_DOT, KC_BSPC, XXXXXXX,  XXXXXXX, TO(_MAIN), _______
 ),
 
@@ -220,7 +220,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     if (!process_smtd(keycode, record)) {
         return false;
     }
-    
+
     if (record->event.pressed) {
         switch (keycode) {
             // Vim mode keys
@@ -337,7 +337,7 @@ void leader_end_user(void) {
         unregister_code(KC_TAB);
         unregister_code(KC_LALT);
     }
-    
+
     // Symbol sequences
     if (leader_sequence_two_keys(KC_A, KC_M)) {
         SEND_STRING("&");
@@ -510,7 +510,7 @@ void render_vertical_text(const char* text) {
 
 void render_left_display(void) {
     uint8_t current_layer = get_highest_layer(layer_state);
-    
+
     switch (current_layer) {
         case _MAIN:
             render_large_letter(large_M);
@@ -535,7 +535,7 @@ void render_left_display(void) {
 
 void render_right_display(void) {
     uint8_t current_layer = get_highest_layer(layer_state);
-    
+
     if (current_layer == _VIM) {
         // Show vim mode
         switch (current_vim_mode) {

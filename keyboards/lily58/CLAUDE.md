@@ -34,7 +34,6 @@ Main Layer Combos:
     Hold Leader, press J -- cycle windows in reverse
     Hold Leader, press K -- cycle windows (alt+tab / command+tab)
 
-
 Main Layer, Leader Key Sequences:
     am = &
     at = @
@@ -94,7 +93,6 @@ Lower Layer:
     NOP, Lower, NOP, NOP,                                 NOP, NOP, NOP, NOP
 
 
-
 Raise Layer:
     NOP, NOP, NOP, page up, page down, NOP,                    NOP, NOP, NOP, NOP, NOP, NOP
     NOP, NOP, NOP, home, end, NOP,                      NOP, NOP, NOP, NOP, NOP, NOP
@@ -116,3 +114,9 @@ Number Layer:
 Vim Mode:
 - This mode emulates Vim Normal Mode
 - ESC returns to the main layer
+
+
+
+Issues:
+- The right-half doesn't seem to go to sleep.
+- "f:" doesn't seem to search for the next ":" character.
