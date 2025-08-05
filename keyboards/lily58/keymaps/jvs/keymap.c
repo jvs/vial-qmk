@@ -6,6 +6,7 @@ enum layer_number {
     _RAISE,
     _NUMBER,
     _VIM,
+    _SYMBOL,
 };
 
 enum custom_keycodes {
@@ -16,52 +17,6 @@ enum custom_keycodes {
     CKC_COMM, // , with RCtrl hold
     SMTD_KEYCODES_END,
 
-    // Leader sequences
-    LD_AM = SMTD_KEYCODES_END,
-    LD_AT,
-    LD_BS,
-    LD_BT,
-    LD_CA,
-    LD_CL,
-    LD_CM,
-    LD_DA,
-    LD_DO,
-    LD_DQ,
-    LD_DT,
-    LD_EQ,
-    LD_EX,
-    LD_FO,
-    LD_FS,
-    LD_GT,
-    LD_HA,
-    LD_LA,
-    LD_LB,
-    LD_LC,
-    LD_LP,
-    LD_LS,
-    LD_LT,
-    LD_PC,
-    LD_PE,
-    LD_PI,
-    LD_PL,
-    LD_PP,
-    LD_PR,
-    LD_QM,
-    LD_QU,
-    LD_RA,
-    LD_RB,
-    LD_RC,
-    LD_RP,
-    LD_RS,
-    LD_SC,
-    LD_SE,
-    LD_SQ,
-    LD_ST,
-    LD_TI,
-    LD_TL,
-    LD_UN,
-    LD_US,
-    LD_Z,
 
     // Vim mode keys
     VIM_H,
@@ -91,10 +46,8 @@ static vim_mode_t current_vim_mode = VIM_NORMAL;
 static uint8_t last_left_layer = 255;
 static uint8_t last_right_layer = 255;
 static vim_mode_t last_vim_mode = VIM_NORMAL;
-static bool leader_active = false;
-static bool last_leader_active = false;
 
-#define KEYMAP_VERSION 5
+#define KEYMAP_VERSION 7
 
 // Combos
 enum combo_events {
@@ -134,8 +87,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   KC_ESC,   KC_1,   KC_2,    KC_3,    KC_4,    KC_5,                     KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    KC_BSPC,
   KC_TAB,   KC_Q,   KC_W,    KC_E,    KC_R,    KC_T,                     KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,    KC_MINS,
   KC_LCTL,  KC_A,   KC_S,    CKC_D,   CKC_F,   KC_G,                     KC_H,    KC_J,    KC_K,    KC_L,    KC_SCLN, KC_QUOT,
-  KC_LALT,  KC_LSFT,KC_Z,    KC_X,    KC_C,    KC_V, KC_B,        KC_B,  KC_N,    CKC_M,   CKC_COMM,KC_DOT,  KC_SLSH, KC_RSFT,
-                        KC_LGUI, MO(_LOWER), KC_LSFT, QK_LEAD, KC_ENT, KC_SPC, MO(_RAISE), MO(_NUMBER)
+  KC_LGUI,  KC_LSFT,KC_Z,    KC_X,    KC_C,    KC_V, KC_B,        KC_B,  KC_N,    CKC_M,   CKC_COMM,KC_DOT,  KC_SLSH, KC_RSFT,
+                        KC_LGUI, MO(_LOWER), KC_LSFT, LT(_SYMBOL, KC_CAPS), KC_ENT, KC_SPC, MO(_RAISE), MO(_NUMBER)
 ),
 
 /* LOWER
@@ -216,6 +169,18 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   XXXXXXX, XXXXXXX, XXXXXXX, VIM_X,   XXXXXXX, VIM_V, XXXXXXX, XXXXXXX, VIM_B,   XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, VIM_DLR,
                              XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,  XXXXXXX, XXXXXXX, XXXXXXX
 ),
+
+/* SYMBOL
+ * Symbol layer - replaces leader key sequences
+ * Based on original leader mappings: am=&, at=@, bs=\, bt=`, etc.
+ */
+[_SYMBOL] = LAYOUT(
+  XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,                     XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, KC_0,    XXXXXXX,
+  XXXXXXX, KC_QUES, XXXXXXX, KC_EQL,  XXXXXXX, KC_TILD,                     XXXXXXX, KC_UNDS, KC_PIPE, XXXXXXX, KC_PLUS, XXXXXXX,
+  KC_AMPR, KC_AT,   KC_BSLS, KC_DLR,  KC_SLSH, KC_GRV,                     KC_HASH, KC_LPRN, KC_RPRN, KC_LT,   KC_COLN, KC_QUOT,
+  XXXXXXX, XXXXXXX, KC_0,    KC_EXLM, KC_CIRC, KC_PERC, KC_LBRC, KC_RBRC, KC_MINS, KC_ASTR, KC_COMM, KC_DOT,  XXXXXXX, XXXXXXX,
+                             XXXXXXX, KC_LCBR, KC_RCBR, _______, KC_DQUO,  KC_GT,   KC_SCLN, XXXXXXX
+),
 };
 
 // SM Tap Dance configuration
@@ -229,11 +194,6 @@ void on_smtd_action(uint16_t keycode, smtd_action action, uint8_t tap_count) {
 }
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-    // Process leader key first, before sm_td intercepts keys
-    if (!process_leader(keycode, record)) {
-        return false;
-    }
-
     if (!process_smtd(keycode, record)) {
         return false;
     }
@@ -332,123 +292,6 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     return true;
 }
 
-// Leader key sequences
-void leader_start_user(void) {
-    leader_active = true;
-}
-
-void leader_end_user(void) {
-    leader_active = false;
-    // Check for window cycling sequences first
-    if (leader_sequence_two_keys(KC_J, KC_J)) {
-        // Cycle windows in reverse (Shift+Cmd+Tab on Mac)
-        register_code(KC_LSFT);
-        register_code(KC_LGUI);
-        register_code(KC_TAB);
-        unregister_code(KC_TAB);
-        unregister_code(KC_LGUI);
-        unregister_code(KC_LSFT);
-    } else if (leader_sequence_two_keys(KC_K, KC_K)) {
-        // Cycle windows forward (Cmd+Tab on Mac)
-        register_code(KC_LGUI);
-        register_code(KC_TAB);
-        unregister_code(KC_TAB);
-        unregister_code(KC_LGUI);
-    }
-
-    // Symbol sequences
-    if (leader_sequence_two_keys(KC_A, KC_M)) {
-        SEND_STRING("&");
-    } else if (leader_sequence_two_keys(KC_A, KC_T)) {
-        SEND_STRING("@");
-    } else if (leader_sequence_two_keys(KC_B, KC_S)) {
-        SEND_STRING("\\");
-    } else if (leader_sequence_two_keys(KC_B, KC_T)) {
-        SEND_STRING("`");
-    } else if (leader_sequence_two_keys(KC_C, KC_A)) {
-        SEND_STRING("^");
-    } else if (leader_sequence_two_keys(KC_C, KC_L)) {
-        SEND_STRING(":");
-    } else if (leader_sequence_two_keys(KC_C, KC_M)) {
-        SEND_STRING(",");
-    } else if (leader_sequence_two_keys(KC_D, KC_A)) {
-        SEND_STRING("-");
-    } else if (leader_sequence_two_keys(KC_D, KC_O)) {
-        SEND_STRING("$");
-    } else if (leader_sequence_two_keys(KC_D, KC_Q)) {
-        SEND_STRING("\"");
-    } else if (leader_sequence_two_keys(KC_D, KC_T)) {
-        SEND_STRING(".");
-    } else if (leader_sequence_two_keys(KC_E, KC_Q)) {
-        SEND_STRING("=");
-    } else if (leader_sequence_two_keys(KC_E, KC_X)) {
-        SEND_STRING("!");
-    } else if (leader_sequence_two_keys(KC_F, KC_O)) {
-        SEND_STRING("/");
-    } else if (leader_sequence_two_keys(KC_F, KC_S)) {
-        SEND_STRING("/");
-    } else if (leader_sequence_two_keys(KC_G, KC_T)) {
-        SEND_STRING(">");
-    } else if (leader_sequence_two_keys(KC_H, KC_A)) {
-        SEND_STRING("#");
-    } else if (leader_sequence_two_keys(KC_L, KC_A)) {
-        SEND_STRING("<");
-    } else if (leader_sequence_two_keys(KC_L, KC_B)) {
-        SEND_STRING("[");
-    } else if (leader_sequence_two_keys(KC_L, KC_C)) {
-        SEND_STRING("{");
-    } else if (leader_sequence_two_keys(KC_L, KC_P)) {
-        SEND_STRING("(");
-    } else if (leader_sequence_two_keys(KC_L, KC_S)) {
-        SEND_STRING("[");
-    } else if (leader_sequence_two_keys(KC_L, KC_T)) {
-        SEND_STRING("<");
-    } else if (leader_sequence_two_keys(KC_P, KC_C)) {
-        SEND_STRING("%");
-    } else if (leader_sequence_two_keys(KC_P, KC_E)) {
-        SEND_STRING("%");
-    } else if (leader_sequence_two_keys(KC_P, KC_I)) {
-        SEND_STRING("|");
-    } else if (leader_sequence_two_keys(KC_P, KC_L)) {
-        SEND_STRING("+");
-    } else if (leader_sequence_two_keys(KC_P, KC_P)) {
-        SEND_STRING("|");
-    } else if (leader_sequence_two_keys(KC_P, KC_R)) {
-        SEND_STRING("%");
-    } else if (leader_sequence_two_keys(KC_Q, KC_M)) {
-        SEND_STRING("?");
-    } else if (leader_sequence_two_keys(KC_Q, KC_U)) {
-        SEND_STRING("?");
-    } else if (leader_sequence_two_keys(KC_R, KC_A)) {
-        SEND_STRING(">");
-    } else if (leader_sequence_two_keys(KC_R, KC_B)) {
-        SEND_STRING("]");
-    } else if (leader_sequence_two_keys(KC_R, KC_C)) {
-        SEND_STRING("}");
-    } else if (leader_sequence_two_keys(KC_R, KC_P)) {
-        SEND_STRING(")");
-    } else if (leader_sequence_two_keys(KC_R, KC_S)) {
-        SEND_STRING("]");
-    } else if (leader_sequence_two_keys(KC_S, KC_C)) {
-        SEND_STRING(";");
-    } else if (leader_sequence_two_keys(KC_S, KC_E)) {
-        SEND_STRING(";");
-    } else if (leader_sequence_two_keys(KC_S, KC_Q)) {
-        SEND_STRING("'");
-    } else if (leader_sequence_two_keys(KC_S, KC_T)) {
-        SEND_STRING("*");
-    } else if (leader_sequence_two_keys(KC_T, KC_I)) {
-        SEND_STRING("~");
-    } else if (leader_sequence_two_keys(KC_T, KC_L)) {
-        SEND_STRING("~");
-    } else if (leader_sequence_two_keys(KC_U, KC_N)) {
-        SEND_STRING("_");
-    } else if (leader_sequence_two_keys(KC_U, KC_S)) {
-        SEND_STRING("_");
-    } else if (leader_sequence_one_key(KC_Z)) {
-        SEND_STRING("0");
-    }
-}
 
 layer_state_t layer_state_set_user(layer_state_t state) {
     // Reset vim mode when leaving vim layer
@@ -578,6 +421,9 @@ void render_left_display(void) {
             case _VIM:
                 render_simple_vertical_text("VIM");
                 break;
+            case _SYMBOL:
+                render_simple_vertical_text("SYM");
+                break;
             default:
                 render_large_letter(large_M);
                 break;
@@ -588,21 +434,16 @@ void render_left_display(void) {
 void render_right_display(void) {
     uint8_t current_layer = get_highest_layer(layer_state);
 
-    // Only redraw if layer, vim mode, or leader status changed
+    // Only redraw if layer or vim mode changed
     bool needs_redraw = (current_layer != last_right_layer) ||
-                       (current_layer == _VIM && current_vim_mode != last_vim_mode) ||
-                       (leader_active != last_leader_active);
+                       (current_layer == _VIM && current_vim_mode != last_vim_mode);
 
     if (needs_redraw) {
         last_right_layer = current_layer;
         last_vim_mode = current_vim_mode;
-        last_leader_active = leader_active;
         oled_clear();
 
-        if (leader_active) {
-            // Show leader key active indicator
-            render_simple_vertical_text("LEAD");
-        } else if (current_layer == _VIM) {
+        if (current_layer == _VIM) {
             // Show vim mode
             switch (current_vim_mode) {
                 case VIM_NORMAL:
@@ -612,6 +453,9 @@ void render_right_display(void) {
                     render_simple_vertical_text("V");
                     break;
             }
+        } else if (current_layer == _SYMBOL) {
+            // Show symbol layer active
+            render_simple_vertical_text("S");
         } else {
             // Show version
             oled_write_P(PSTR("v"), false);

@@ -49,10 +49,7 @@
 #define MAX_DEFERRED_EXECUTORS 10
 #define SMTD_GLOBAL_RELEASE_TERM 10
 
-// Leader key configuration
-#define LEADER_TIMEOUT 275
-#define LEADER_PER_KEY_TIMING
-#define LEADER_NO_TIMEOUT
+// Leader key removed - using symbol layer instead
 
 // Combo configuration
 #define COMBO_COUNT 3

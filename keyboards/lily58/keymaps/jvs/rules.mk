@@ -14,8 +14,7 @@ OLED_ENABLE = yes           # OLED display
 # sm_td library support
 DEFERRED_EXEC_ENABLE = yes
 
-# Leader key support
-LEADER_ENABLE = yes
+# Leader key removed - using symbol layer instead
 
 # Combo support
 COMBO_ENABLE = yes
