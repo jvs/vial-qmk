@@ -1,5 +1,4 @@
 #include QMK_KEYBOARD_H
-#include "sm_td.h"
 
 enum layer_number {
     _MAIN = 0,
@@ -77,6 +76,8 @@ enum custom_keycodes {
     VIM_B,
     VIM_V,
 };
+
+#include "sm_td.h"
 
 // Vim mode tracking
 typedef enum {
