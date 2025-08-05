@@ -10,13 +10,12 @@ enum layer_number {
 };
 
 enum custom_keycodes {
-    CKC_D = SAFE_RANGE,   // D with LCtrl hold
+    SMTD_KEYCODES_BEGIN = SAFE_RANGE,
+    CKC_D,   // D with LCtrl hold
     CKC_F,   // F with LAlt hold
     CKC_M,   // M with RAlt hold
     CKC_COMM, // , with RCtrl hold
-    
-    SMTD_KEYCODES_BEGIN = CKC_D,
-    SMTD_KEYCODES_END = CKC_COMM + 1,
+    SMTD_KEYCODES_END,
     
     // Leader sequences
     LD_AM = SMTD_KEYCODES_END,
