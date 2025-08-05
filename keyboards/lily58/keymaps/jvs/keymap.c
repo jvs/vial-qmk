@@ -30,6 +30,9 @@ enum custom_keycodes {
     VIM_DLR,
     VIM_B,
     VIM_V,
+
+    // Custom window switching
+    WIN_SWITCH,
 };
 
 #include "sm_td.h"
@@ -42,31 +45,36 @@ typedef enum {
 
 static vim_mode_t current_vim_mode = VIM_NORMAL;
 
+// OS detection will be handled by QMK's built-in detection
 
-#define KEYMAP_VERSION 8
+
+#define KEYMAP_VERSION 9
 
 // Combos
 enum combo_events {
     JK_ESC,
     DF_VIM,
     VIM_JK_ESC,
+    ALT_ESC_WIN,
 };
 
 const uint16_t PROGMEM jk_combo[] = {KC_J, KC_K, COMBO_END};
 const uint16_t PROGMEM df_combo[] = {CKC_D, CKC_F, COMBO_END};
 const uint16_t PROGMEM vim_jk_combo[] = {VIM_J, VIM_K, COMBO_END};
+const uint16_t PROGMEM alt_esc_combo[] = {KC_LALT, KC_ESC, COMBO_END};
 
 combo_t key_combos[COMBO_COUNT] = {
     [JK_ESC] = COMBO(jk_combo, KC_ESC),
     [DF_VIM] = COMBO(df_combo, TO(_VIM)),
     [VIM_JK_ESC] = COMBO(vim_jk_combo, TO(_MAIN)),
+    [ALT_ESC_WIN] = COMBO(alt_esc_combo, WIN_SWITCH),
 };
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
 /* MAIN
  * ,-----------------------------------------.                    ,-----------------------------------------.
- * |  `~  |   1  |   2  |   3  |   4  |   5  |                    |   6  |   7  |   8  |   9  |   0  |  \|  |
+ * | ESC  |   1  |   2  |   3  |   4  |   5  |                    |   6  |   7  |   8  |   9  |   0  |  \|  |
  * |------+------+------+------+------+------|                    |------+------+------+------+------+------|
  * | Tab  |   Q  |   W  |   E  |   R  |   T  |                    |   Y  |   U  |   I  |   O  |   P  |  -   |
  * |------+------+------+------+------+------|                    |------+------+------+------+------+------|
@@ -80,8 +88,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  */
 
 [_MAIN] = LAYOUT(
-  KC_GRV,   KC_1,   KC_2,    KC_3,    KC_4,    KC_5,                      KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    KC_MINS,
-  KC_TAB,   KC_Q,   KC_W,    KC_E,    KC_R,    KC_T,                      KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,    KC_BSLS,
+  KC_ESC,   KC_1,   KC_2,    KC_3,    KC_4,    KC_5,                      KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    KC_BSLS,
+  KC_TAB,   KC_Q,   KC_W,    KC_E,    KC_R,    KC_T,                      KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,    KC_MINS,
   KC_LCTL,  KC_A,   KC_S,    CKC_D,   CKC_F,   KC_G,                      KC_H,    KC_J,    KC_K,    KC_L,    KC_SCLN, KC_QUOT,
   KC_LGUI,  KC_LSFT,KC_Z,    KC_X,    KC_C,    KC_V, KC_B,         KC_B,  KC_N,    CKC_M,   CKC_COMM,KC_DOT,  KC_SLSH, KC_RSFT,
                         MO(_SYMBOL), MO(_LOWER), KC_LSFT, KC_BSPC, KC_ENT, KC_SPC, MO(_RAISE), MO(_NUMBER)
@@ -171,7 +179,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  * Based on original leader mappings: am=&, at=@, bs=\, bt=`, etc.
  */
 [_SYMBOL] = LAYOUT(
-  XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,                     XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, KC_0,    XXXXXXX,
+  WIN_SWITCH, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,                     XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, KC_0,    XXXXXXX,
   XXXXXXX, KC_QUES, XXXXXXX, KC_EQL,  XXXXXXX, KC_TILD,                     XXXXXXX, KC_UNDS, KC_PIPE, XXXXXXX, KC_PLUS, XXXXXXX,
   KC_AMPR, KC_AT,   KC_BSLS, KC_DLR,  KC_SLSH, KC_GRV,                     KC_HASH, KC_LPRN, KC_RPRN, KC_LT,   KC_COLN, KC_QUOT,
   XXXXXXX, XXXXXXX, KC_0,    KC_EXLM, KC_CIRC, KC_PERC, KC_LBRC, KC_RBRC, KC_MINS, KC_ASTR, KC_COMM, KC_DOT,  XXXXXXX, XXXXXXX,
@@ -245,6 +253,22 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 unregister_code(KC_LSFT);
                 register_code(KC_DEL);
                 break;
+
+            // OS-aware window switching
+            case WIN_SWITCH:
+                {
+                    os_variant_t detected_os = detected_host_os();
+                    if (detected_os == OS_MACOS || detected_os == OS_IOS || detected_os == OS_IPADOS) {
+                        // Mac/iOS: Cmd+Tab for app switching
+                        register_code(KC_LGUI);
+                        register_code(KC_TAB);
+                    } else {
+                        // Windows/Linux: Alt+` for window switching within app
+                        register_code(KC_LALT);
+                        register_code(KC_GRV);
+                    }
+                }
+                break;
         }
     } else {
         switch (keycode) {
@@ -282,6 +306,21 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 break;
             case VIM_DD:
                 unregister_code(KC_DEL);
+                break;
+
+            case WIN_SWITCH:
+                {
+                    os_variant_t detected_os = detected_host_os();
+                    if (detected_os == OS_MACOS || detected_os == OS_IOS || detected_os == OS_IPADOS) {
+                        // Mac/iOS: Release Cmd+Tab
+                        unregister_code(KC_TAB);
+                        unregister_code(KC_LGUI);
+                    } else {
+                        // Windows/Linux: Release Alt+`
+                        unregister_code(KC_GRV);
+                        unregister_code(KC_LALT);
+                    }
+                }
                 break;
         }
     }

@@ -49,10 +49,13 @@
 #define MAX_DEFERRED_EXECUTORS 10
 #define SMTD_GLOBAL_RELEASE_TERM 10
 
+// OS detection
+#define OS_DETECTION_ENABLE
+
 // Leader key removed - using symbol layer instead
 
 // Combo configuration
-#define COMBO_COUNT 3
+#define COMBO_COUNT 4
 #define COMBO_TERM 50
 
 // OLED timeout (in milliseconds) - 10 seconds for testing
