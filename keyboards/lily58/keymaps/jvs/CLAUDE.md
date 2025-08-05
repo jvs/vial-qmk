@@ -1,0 +1,7 @@
+- I have a lily58 keyboard with ProMicro RP2040.
+- I am using a github codespace to compile the configuration.
+- Don't try to compile this locally, it won't work.
+- I am able to download a uf2 file from my coderspace, and I am able to flash my keyboard.
+- My keyboard does not have RGB lights or rotary encoders.
+- Each half of my keyboard has an OLED screen.
+- I am using this library to configure home row modifiers: https://github.com/stasmarkin/sm_td
