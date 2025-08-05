@@ -258,7 +258,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             case WIN_SWITCH:
                 {
                     os_variant_t detected_os = detected_host_os();
-                    if (detected_os == OS_MACOS || detected_os == OS_IOS || detected_os == OS_IPADOS) {
+                    if (detected_os == OS_MACOS || detected_os == OS_IOS) {
                         // Mac/iOS: Cmd+Tab for app switching
                         register_code(KC_LGUI);
                         register_code(KC_TAB);
@@ -311,7 +311,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             case WIN_SWITCH:
                 {
                     os_variant_t detected_os = detected_host_os();
-                    if (detected_os == OS_MACOS || detected_os == OS_IOS || detected_os == OS_IPADOS) {
+                    if (detected_os == OS_MACOS || detected_os == OS_IOS) {
                         // Mac/iOS: Release Cmd+Tab
                         unregister_code(KC_TAB);
                         unregister_code(KC_LGUI);
