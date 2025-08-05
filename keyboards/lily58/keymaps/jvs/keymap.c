@@ -445,8 +445,8 @@ layer_state_t layer_state_set_user(layer_state_t state) {
 #ifdef OLED_ENABLE
 
 oled_rotation_t oled_init_user(oled_rotation_t rotation) {
-    // Rotate 90 degrees clockwise for tall/skinny orientation
-    return OLED_ROTATION_90;
+    // Rotate 270 degrees (or -90 degrees) for proper tall/skinny orientation
+    return OLED_ROTATION_270;
 }
 
 // Large letter bitmaps for 90-degree rotated display
