@@ -16,6 +16,9 @@ DEFERRED_EXEC_ENABLE = yes
 
 # Leader key removed - using symbol layer instead
 
+# OS detection support
+OS_DETECTION_ENABLE = yes
+
 # Combo support
 COMBO_ENABLE = yes
 

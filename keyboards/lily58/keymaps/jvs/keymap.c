@@ -257,6 +257,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             // OS-aware window switching
             case WIN_SWITCH:
                 {
+#ifdef OS_DETECTION_ENABLE
                     os_variant_t detected_os = detected_host_os();
                     if (detected_os == OS_MACOS || detected_os == OS_IOS) {
                         // Mac/iOS: Cmd+Tab for app switching
@@ -267,6 +268,11 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                         register_code(KC_LALT);
                         register_code(KC_GRV);
                     }
+#else
+                    // Fallback to Mac mode if OS detection not available
+                    register_code(KC_LGUI);
+                    register_code(KC_TAB);
+#endif
                 }
                 break;
         }
@@ -310,6 +316,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
             case WIN_SWITCH:
                 {
+#ifdef OS_DETECTION_ENABLE
                     os_variant_t detected_os = detected_host_os();
                     if (detected_os == OS_MACOS || detected_os == OS_IOS) {
                         // Mac/iOS: Release Cmd+Tab
@@ -320,6 +327,11 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                         unregister_code(KC_GRV);
                         unregister_code(KC_LALT);
                     }
+#else
+                    // Fallback to Mac mode if OS detection not available
+                    unregister_code(KC_TAB);
+                    unregister_code(KC_LGUI);
+#endif
                 }
                 break;
         }
