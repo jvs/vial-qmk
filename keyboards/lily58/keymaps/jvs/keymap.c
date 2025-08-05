@@ -94,7 +94,7 @@ static vim_mode_t last_vim_mode = VIM_NORMAL;
 static bool leader_active = false;
 static bool last_leader_active = false;
 
-#define KEYMAP_VERSION 2
+#define KEYMAP_VERSION 3
 
 // Combos
 enum combo_events {
