@@ -91,8 +91,9 @@ static vim_mode_t current_vim_mode = VIM_NORMAL;
 static uint8_t last_left_layer = 255;
 static uint8_t last_right_layer = 255;
 static vim_mode_t last_vim_mode = VIM_NORMAL;
-static bool leader_active = false;
 static bool last_leader_active = false;
+
+#define KEYMAP_VERSION 1
 
 // Combos
 enum combo_events {
@@ -327,11 +328,10 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
 // Leader key sequences
 void leader_start_user(void) {
-    leader_active = true;
+    // Leader key started - QMK tracks this automatically
 }
 
 void leader_end_user(void) {
-    leader_active = false;
     // Check for window cycling sequences first
     if (leader_sequence_two_keys(KC_J, KC_J)) {
         // Cycle windows in reverse (Shift+Cmd+Tab on Mac)
@@ -584,15 +584,15 @@ void render_right_display(void) {
     // Only redraw if layer, vim mode, or leader status changed
     bool needs_redraw = (current_layer != last_right_layer) ||
                        (current_layer == _VIM && current_vim_mode != last_vim_mode) ||
-                       (leader_active != last_leader_active);
+                       (is_leader_active() != last_leader_active);
 
     if (needs_redraw) {
         last_right_layer = current_layer;
         last_vim_mode = current_vim_mode;
-        last_leader_active = leader_active;
+        last_leader_active = is_leader_active();
         oled_clear();
 
-        if (leader_active) {
+        if (is_leader_active()) {
             // Show leader key active indicator
             render_simple_vertical_text("LEAD");
         } else if (current_layer == _VIM) {
@@ -606,8 +606,9 @@ void render_right_display(void) {
                     break;
             }
         } else {
-            // Show JVS
-            render_simple_vertical_text("JVS");
+            // Show version
+            oled_write_P(PSTR("v"), false);
+            oled_write(get_u8_str(KEYMAP_VERSION, ' '), false);
         }
     }
 }

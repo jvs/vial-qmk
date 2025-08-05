@@ -50,8 +50,7 @@
 #define SMTD_GLOBAL_RELEASE_TERM 10
 
 // Leader key configuration
-#define LEADER_PER_KEY_TIMING
-#define LEADER_TIMEOUT 1000
+#define LEADER_TIMEOUT 500
 
 // Combo configuration
 #define COMBO_COUNT 3
