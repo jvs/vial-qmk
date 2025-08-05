@@ -650,9 +650,37 @@ void render_right_display(void) {
             // Show symbol layer active
             render_simple_vertical_text("S");
         } else {
-            // Show version
+            // Show version and detected OS
             oled_write_P(PSTR("v"), false);
             oled_write(get_u8_str(KEYMAP_VERSION, ' '), false);
+
+#ifdef OS_DETECTION_ENABLE
+            os_variant_t detected_os = detected_host_os();
+            oled_set_cursor(0, 2);
+            switch (detected_os) {
+                case OS_MACOS:
+                    oled_write_P(PSTR("MAC"), false);
+                    break;
+                case OS_IOS:
+                    oled_write_P(PSTR("iOS"), false);
+                    break;
+                case OS_WINDOWS:
+                    oled_write_P(PSTR("WIN"), false);
+                    break;
+                case OS_LINUX:
+                    oled_write_P(PSTR("LNX"), false);
+                    break;
+                case OS_UNSURE:
+                    oled_write_P(PSTR("???"), false);
+                    break;
+                default:
+                    oled_write_P(PSTR("UNK"), false);
+                    break;
+            }
+#else
+            oled_set_cursor(0, 2);
+            oled_write_P(PSTR("N/A"), false);
+#endif
         }
     }
 }
