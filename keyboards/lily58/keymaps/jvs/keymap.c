@@ -320,10 +320,11 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
 // Leader key sequences
 void leader_start_user(void) {
-    // Leader key started
+    leader_active = true;
 }
 
 void leader_end_user(void) {
+    leader_active = false;
     // Check for window cycling sequences first
     if (leader_sequence_two_keys(KC_J, KC_J)) {
         // Cycle windows in reverse (Shift+Cmd+Tab on Mac)
@@ -529,9 +530,11 @@ static const char PROGMEM vertical_VIM[] = {
 };
 
 // Display tracking variables
-static uint8_t last_left_layer = 255; 
+static uint8_t last_left_layer = 255;
 static uint8_t last_right_layer = 255;
 static vim_mode_t last_vim_mode = VIM_NORMAL;
+static bool leader_active = false;
+static bool last_leader_active = false;
 
 void render_large_letter(const char* letter_bitmap) {
     oled_write_raw_P(letter_bitmap, 64);
@@ -578,16 +581,21 @@ void render_left_display(void) {
 void render_right_display(void) {
     uint8_t current_layer = get_highest_layer(layer_state);
 
-    // Only redraw if layer or vim mode changed
+    // Only redraw if layer, vim mode, or leader status changed
     bool needs_redraw = (current_layer != last_right_layer) ||
-                       (current_layer == _VIM && current_vim_mode != last_vim_mode);
+                       (current_layer == _VIM && current_vim_mode != last_vim_mode) ||
+                       (leader_active != last_leader_active);
 
     if (needs_redraw) {
         last_right_layer = current_layer;
         last_vim_mode = current_vim_mode;
+        last_leader_active = leader_active;
         oled_clear();
 
-        if (current_layer == _VIM) {
+        if (leader_active) {
+            // Show leader key active indicator
+            render_simple_vertical_text("LEAD");
+        } else if (current_layer == _VIM) {
             // Show vim mode
             switch (current_vim_mode) {
                 case VIM_NORMAL:

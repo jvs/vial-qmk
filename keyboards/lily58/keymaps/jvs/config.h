@@ -51,7 +51,7 @@
 
 // Leader key configuration
 #define LEADER_PER_KEY_TIMING
-#define LEADER_TIMEOUT 300
+#define LEADER_TIMEOUT 1000
 
 // Combo configuration
 #define COMBO_COUNT 3
