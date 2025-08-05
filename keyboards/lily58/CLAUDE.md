@@ -118,5 +118,8 @@ Vim Mode:
 
 
 Issues:
+- The Vim characters don't go away.
 - The right-half doesn't seem to go to sleep.
+- The number layer key doesn't work.
 - "f:" doesn't seem to search for the next ":" character.
+- The letter after n doesn't work.

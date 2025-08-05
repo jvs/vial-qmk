@@ -560,4 +560,13 @@ bool oled_task_user(void) {
     }
     return false;
 }
+
+// Add OLED timeout for slave side
+void suspend_power_down_user(void) {
+    oled_off();
+}
+
+void suspend_wakeup_init_user(void) {
+    oled_on();
+}
 #endif // OLED_ENABLE

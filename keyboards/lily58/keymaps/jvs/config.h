@@ -23,7 +23,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define USE_SERIAL_PD2
 
 #define TAPPING_FORCE_HOLD
-#define TAPPING_TERM 100
+#define TAPPING_TERM 200
+
+// sm_td timing adjustments
+#define SMTD_GLOBAL_TAP_TERM 150
 
 #define ENABLE_RGB_MATRIX_ALPHAS_MODS
 #define ENABLE_RGB_MATRIX_GRADIENT_UP_DOWN
@@ -64,6 +67,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 // sm_td configuration
 #define MAX_DEFERRED_EXECUTORS 10
+#define SMTD_GLOBAL_RELEASE_TERM 10
 
 // Leader key configuration
 #define LEADER_PER_KEY_TIMING
