@@ -126,7 +126,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   KC_TAB,   KC_Q,   KC_W,    KC_E,    KC_R,    KC_T,                     KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,    KC_MINS,
   KC_LCTL,  KC_A,   KC_S,    CKC_D,   CKC_F,   KC_G,                     KC_H,    KC_J,    KC_K,    KC_L,    KC_SCLN, KC_QUOT,
   KC_LALT,  KC_LSFT,KC_Z,    KC_X,    KC_C,    KC_V, KC_B,        KC_B,  KC_N,    CKC_M,   CKC_COMM,KC_DOT,  KC_SLSH, KC_RSFT,
-                        KC_LGUI, MO(_LOWER), KC_LSFT, QK_LEAD, KC_ENT, KC_SPC, MO(_RAISE), KC_Z
+                        KC_LGUI, MO(_LOWER), KC_LSFT, QK_LEAD, KC_ENT, KC_SPC, MO(_RAISE), MO(_NUMBER)
 ),
 
 /* LOWER
@@ -441,7 +441,8 @@ layer_state_t layer_state_set_user(layer_state_t state) {
         current_vim_mode = VIM_NORMAL;
         unregister_code(KC_LSFT);
     }
-    return update_tri_layer_state(state, _LOWER, _RAISE, _NUMBER);
+    // Remove tri-layer to allow direct NUMBER layer access
+    return state;
 }
 
 //SSD1306 OLED update loop, make sure to enable OLED_ENABLE=yes in rules.mk
@@ -498,69 +499,48 @@ static const char PROGMEM large_N[] = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
-// Large letter bitmaps for text words
-static const char PROGMEM large_J[] = {
+// Vertical text bitmaps - each shows the full word vertically
+static const char PROGMEM vertical_JVS[] = {
+    // J at top
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x80,
+    0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF,
-    0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    // V in middle
+    0x1F, 0x1F, 0x60, 0x80, 0x80, 0x60, 0x1F, 0x1F,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0xFF,
-    0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+    // S at bottom
+    0x00, 0x00, 0x06, 0x0F, 0x19, 0x19, 0x19, 0x10
 };
 
-static const char PROGMEM large_V[] = {
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0xFF, 0xFF, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x0F, 0x3F, 0xF0, 0xC0, 0x00, 0x00, 0xC0, 0xF0,
-    0x3F, 0x0F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-};
-
-static const char PROGMEM large_S[] = {
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x1E, 0x3F, 0x33, 0x33, 0x33, 0x33, 0x73,
-    0xE2, 0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x07, 0x8F, 0xCC, 0xCC, 0xCC, 0xCC, 0xFC,
-    0x7F, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-};
-
-static const char PROGMEM large_I[] = {
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0x00,
+static const char PROGMEM vertical_VIM[] = {
+    // V at top
+    0x07, 0x1F, 0x78, 0xE0, 0xE0, 0x78, 0x1F, 0x07,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0x00,
+    // I in middle
+    0x00, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    // M at bottom
+    0x00, 0xFF, 0xFF, 0x06, 0x0C, 0x06, 0xFF, 0xFF
 };
 
 // Vertical text functions
+static uint8_t last_layer = 255; // Track layer changes to avoid unnecessary redraws
+static vim_mode_t last_vim_mode = VIM_NORMAL; // Track vim mode changes
+
 void render_large_letter(const char* letter_bitmap) {
-    oled_clear();
     oled_write_raw_P(letter_bitmap, 64);
 }
 
 void render_word_bitmap(const char* word) {
-    oled_clear();
     if (strcmp(word, "JVS") == 0) {
-        // Render J, V, S vertically
-        oled_write_raw_P(large_J, 64);
-        // Note: In a real implementation, you'd need to position V and S below J
-        // For now, we'll show just J as a placeholder
+        oled_write_raw_P(vertical_JVS, 64);
     } else if (strcmp(word, "VIM") == 0) {
-        // Render V, I, M vertically
-        oled_write_raw_P(large_V, 64);
-        // Note: In a real implementation, you'd need to position I and M below V
-        // For now, we'll show just V as a placeholder
+        oled_write_raw_P(vertical_VIM, 64);
     } else if (strcmp(word, "N") == 0) {
         oled_write_raw_P(large_N, 64);
     } else if (strcmp(word, "V") == 0) {
@@ -571,44 +551,59 @@ void render_word_bitmap(const char* word) {
 void render_left_display(void) {
     uint8_t current_layer = get_highest_layer(layer_state);
 
-    switch (current_layer) {
-        case _MAIN:
-            render_large_letter(large_M);
-            break;
-        case _LOWER:
-            render_large_letter(large_L);
-            break;
-        case _RAISE:
-            render_large_letter(large_R);
-            break;
-        case _NUMBER:
-            render_large_letter(large_N);
-            break;
-        case _VIM:
-            render_word_bitmap("VIM");
-            break;
-        default:
-            render_large_letter(large_M);
-            break;
+    // Only redraw if layer changed
+    if (current_layer != last_layer) {
+        last_layer = current_layer;
+        oled_clear();
+
+        switch (current_layer) {
+            case _MAIN:
+                render_large_letter(large_M);
+                break;
+            case _LOWER:
+                render_large_letter(large_L);
+                break;
+            case _RAISE:
+                render_large_letter(large_R);
+                break;
+            case _NUMBER:
+                render_large_letter(large_N);
+                break;
+            case _VIM:
+                render_word_bitmap("VIM");
+                break;
+            default:
+                render_large_letter(large_M);
+                break;
+        }
     }
 }
 
 void render_right_display(void) {
     uint8_t current_layer = get_highest_layer(layer_state);
 
-    if (current_layer == _VIM) {
-        // Show vim mode
-        switch (current_vim_mode) {
-            case VIM_NORMAL:
-                render_word_bitmap("N");
-                break;
-            case VIM_VISUAL:
-                render_word_bitmap("V");
-                break;
+    // Only redraw if layer or vim mode changed
+    bool needs_redraw = (current_layer != last_layer) ||
+                       (current_layer == _VIM && current_vim_mode != last_vim_mode);
+
+    if (needs_redraw) {
+        last_vim_mode = current_vim_mode;
+        oled_clear();
+
+        if (current_layer == _VIM) {
+            // Show vim mode
+            switch (current_vim_mode) {
+                case VIM_NORMAL:
+                    render_word_bitmap("N");
+                    break;
+                case VIM_VISUAL:
+                    render_word_bitmap("V");
+                    break;
+            }
+        } else {
+            // Show JVS
+            render_word_bitmap("JVS");
         }
-    } else {
-        // Show JVS
-        render_word_bitmap("JVS");
     }
 }
 

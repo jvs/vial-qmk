@@ -57,5 +57,7 @@
 #define COMBO_COUNT 3
 #define COMBO_TERM 50
 
-// OLED timeout (in milliseconds)
-#define OLED_TIMEOUT 30000
+// OLED timeout (in milliseconds) - 10 seconds for testing
+#define OLED_TIMEOUT 10000
+// Enable OLED sleep
+#define OLED_SLEEP_ON_IDLE
