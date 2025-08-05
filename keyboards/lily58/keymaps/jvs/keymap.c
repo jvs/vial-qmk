@@ -42,10 +42,6 @@ typedef enum {
 
 static vim_mode_t current_vim_mode = VIM_NORMAL;
 
-// Display tracking variables
-static uint8_t last_left_layer = 255;
-static uint8_t last_right_layer = 255;
-static vim_mode_t last_vim_mode = VIM_NORMAL;
 
 #define KEYMAP_VERSION 8
 
@@ -70,7 +66,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
 /* MAIN
  * ,-----------------------------------------.                    ,-----------------------------------------.
- * | ESC  |   1  |   2  |   3  |   4  |   5  |                    |   6  |   7  |   8  |   9  |   0  |  \|  |
+ * |  `~  |   1  |   2  |   3  |   4  |   5  |                    |   6  |   7  |   8  |   9  |   0  |  \|  |
  * |------+------+------+------+------+------|                    |------+------+------+------+------+------|
  * | Tab  |   Q  |   W  |   E  |   R  |   T  |                    |   Y  |   U  |   I  |   O  |   P  |  -   |
  * |------+------+------+------+------+------|                    |------+------+------+------+------+------|
@@ -84,11 +80,12 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  */
 
 [_MAIN] = LAYOUT(
-  KC_ESC,   KC_1,   KC_2,    KC_3,    KC_4,    KC_5,                      KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    KC_BSLS,
+  KC_GRV,   KC_1,   KC_2,    KC_3,    KC_4,    KC_5,                      KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    KC_BSLS,
   KC_TAB,   KC_Q,   KC_W,    KC_E,    KC_R,    KC_T,                      KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,    KC_MINS,
   KC_LCTL,  KC_A,   KC_S,    CKC_D,   CKC_F,   KC_G,                      KC_H,    KC_J,    KC_K,    KC_L,    KC_SCLN, KC_QUOT,
   KC_LGUI,  KC_LSFT,KC_Z,    KC_X,    KC_C,    KC_V, KC_B,         KC_B,  KC_N,    CKC_M,   CKC_COMM,KC_DOT,  KC_SLSH, KC_RSFT,
                         MO(_SYMBOL), MO(_LOWER), KC_LSFT, KC_BSPC, KC_ENT, KC_SPC, MO(_RAISE), MO(_NUMBER)
+),
 
 /* LOWER
  * ,-----------------------------------------.                    ,-----------------------------------------.
@@ -304,6 +301,11 @@ layer_state_t layer_state_set_user(layer_state_t state) {
 
 //SSD1306 OLED update loop, make sure to enable OLED_ENABLE=yes in rules.mk
 #ifdef OLED_ENABLE
+
+// Display tracking variables
+static uint8_t last_left_layer = 255;
+static uint8_t last_right_layer = 255;
+static vim_mode_t last_vim_mode = VIM_NORMAL;
 
 oled_rotation_t oled_init_user(oled_rotation_t rotation) {
     // Rotate 270 degrees (or -90 degrees) for proper tall/skinny orientation
