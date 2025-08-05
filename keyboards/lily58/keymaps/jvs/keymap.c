@@ -87,6 +87,13 @@ typedef enum {
 
 static vim_mode_t current_vim_mode = VIM_NORMAL;
 
+// Display tracking variables
+static uint8_t last_left_layer = 255;
+static uint8_t last_right_layer = 255;
+static vim_mode_t last_vim_mode = VIM_NORMAL;
+static bool leader_active = false;
+static bool last_leader_active = false;
+
 // Combos
 enum combo_events {
     JK_ESC,
@@ -528,13 +535,6 @@ static const char PROGMEM vertical_VIM[] = {
     // M at bottom
     0x00, 0xFF, 0xFF, 0x06, 0x0C, 0x06, 0xFF, 0xFF
 };
-
-// Display tracking variables
-static uint8_t last_left_layer = 255;
-static uint8_t last_right_layer = 255;
-static vim_mode_t last_vim_mode = VIM_NORMAL;
-static bool leader_active = false;
-static bool last_leader_active = false;
 
 void render_large_letter(const char* letter_bitmap) {
     oled_write_raw_P(letter_bitmap, 64);
