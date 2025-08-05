@@ -94,7 +94,7 @@ static vim_mode_t last_vim_mode = VIM_NORMAL;
 static bool leader_active = false;
 static bool last_leader_active = false;
 
-#define KEYMAP_VERSION 3
+#define KEYMAP_VERSION 5
 
 // Combos
 enum combo_events {
@@ -229,6 +229,11 @@ void on_smtd_action(uint16_t keycode, smtd_action action, uint8_t tap_count) {
 }
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+    // Process leader key first, before sm_td intercepts keys
+    if (!process_leader(keycode, record)) {
+        return false;
+    }
+
     if (!process_smtd(keycode, record)) {
         return false;
     }
