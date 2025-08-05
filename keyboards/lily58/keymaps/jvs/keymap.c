@@ -169,8 +169,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 [_RAISE] = LAYOUT(
   XXXXXXX, XXXXXXX, XXXXXXX, KC_PGUP, KC_PGDN, XXXXXXX,                     XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,
   XXXXXXX, XXXXXXX, XXXXXXX, KC_HOME, KC_END,  XXXXXXX,                     XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,
-  XXXXXXX, XXXXXXX, XXXXXXX, C(S(KC_TAB)), C(KC_TAB), XXXXXXX,               OSM(MOD_LALT), OSM(MOD_LCTL), OSM(MOD_RSFT), OSM(MOD_RGUI), XXXXXXX, XXXXXXX,
-  XXXXXXX, XXXXXXX, C(KC_Z), C(KC_X), C(KC_C), C(KC_V), XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,
+  XXXXXXX, XXXXXXX, XXXXXXX, G(S(KC_TAB)), G(KC_TAB), XXXXXXX,               OSM(MOD_LALT), OSM(MOD_LCTL), OSM(MOD_RSFT), OSM(MOD_RGUI), XXXXXXX, XXXXXXX,
+  XXXXXXX, XXXXXXX, G(KC_Z), G(KC_X), G(KC_C), G(KC_V), XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,
                              XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,  XXXXXXX, _______, XXXXXXX
 ),
 
@@ -326,19 +326,19 @@ void leader_start_user(void) {
 void leader_end_user(void) {
     // Check for window cycling sequences first
     if (leader_sequence_two_keys(KC_J, KC_J)) {
-        // Cycle windows in reverse (Shift+Alt+Tab or Shift+Cmd+Tab)
+        // Cycle windows in reverse (Shift+Cmd+Tab on Mac)
         register_code(KC_LSFT);
-        register_code(KC_LALT);
+        register_code(KC_LGUI);
         register_code(KC_TAB);
         unregister_code(KC_TAB);
-        unregister_code(KC_LALT);
+        unregister_code(KC_LGUI);
         unregister_code(KC_LSFT);
     } else if (leader_sequence_two_keys(KC_K, KC_K)) {
-        // Cycle windows forward (Alt+Tab or Cmd+Tab)
-        register_code(KC_LALT);
+        // Cycle windows forward (Cmd+Tab on Mac)
+        register_code(KC_LGUI);
         register_code(KC_TAB);
         unregister_code(KC_TAB);
-        unregister_code(KC_LALT);
+        unregister_code(KC_LGUI);
     }
 
     // Symbol sequences
@@ -528,34 +528,19 @@ static const char PROGMEM vertical_VIM[] = {
     0x00, 0xFF, 0xFF, 0x06, 0x0C, 0x06, 0xFF, 0xFF
 };
 
-// Vertical text functions
-static uint8_t last_layer = 255; // Track layer changes to avoid unnecessary redraws
-static vim_mode_t last_vim_mode = VIM_NORMAL; // Track vim mode changes
+// Display tracking variables
+static uint8_t last_left_layer = 255; 
+static uint8_t last_right_layer = 255;
+static vim_mode_t last_vim_mode = VIM_NORMAL;
 
 void render_large_letter(const char* letter_bitmap) {
     oled_write_raw_P(letter_bitmap, 64);
 }
 
-void render_word_bitmap(const char* word) {
-    if (strcmp(word, "JVS") == 0) {
-        oled_write_raw_P(vertical_JVS, 64);
-    } else if (strcmp(word, "VIM") == 0) {
-        oled_write_raw_P(vertical_VIM, 64);
-    } else if (strcmp(word, "N") == 0) {
-        oled_write_raw_P(large_N, 64);
-    } else if (strcmp(word, "V") == 0) {
-        // Use a simple V bitmap for vim visual mode
-        static const char PROGMEM single_V[] = {
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0xFF, 0xFF, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x0F, 0x3F, 0xF0, 0xC0, 0x00, 0x00, 0xC0, 0xF0,
-            0x3F, 0x0F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-        };
-        oled_write_raw_P(single_V, 64);
+void render_simple_vertical_text(const char* text) {
+    for (int i = 0; text[i] != '\0'; i++) {
+        oled_set_cursor(0, i);
+        oled_write_char(text[i], false);
     }
 }
 
@@ -563,8 +548,8 @@ void render_left_display(void) {
     uint8_t current_layer = get_highest_layer(layer_state);
 
     // Only redraw if layer changed
-    if (current_layer != last_layer) {
-        last_layer = current_layer;
+    if (current_layer != last_left_layer) {
+        last_left_layer = current_layer;
         oled_clear();
 
         switch (current_layer) {
@@ -581,7 +566,7 @@ void render_left_display(void) {
                 render_large_letter(large_N);
                 break;
             case _VIM:
-                render_word_bitmap("VIM");
+                render_simple_vertical_text("VIM");
                 break;
             default:
                 render_large_letter(large_M);
@@ -594,10 +579,11 @@ void render_right_display(void) {
     uint8_t current_layer = get_highest_layer(layer_state);
 
     // Only redraw if layer or vim mode changed
-    bool needs_redraw = (current_layer != last_layer) ||
+    bool needs_redraw = (current_layer != last_right_layer) ||
                        (current_layer == _VIM && current_vim_mode != last_vim_mode);
 
     if (needs_redraw) {
+        last_right_layer = current_layer;
         last_vim_mode = current_vim_mode;
         oled_clear();
 
@@ -605,15 +591,15 @@ void render_right_display(void) {
             // Show vim mode
             switch (current_vim_mode) {
                 case VIM_NORMAL:
-                    render_word_bitmap("N");
+                    render_simple_vertical_text("N");
                     break;
                 case VIM_VISUAL:
-                    render_word_bitmap("V");
+                    render_simple_vertical_text("V");
                     break;
             }
         } else {
             // Show JVS
-            render_word_bitmap("JVS");
+            render_simple_vertical_text("JVS");
         }
     }
 }

@@ -124,10 +124,23 @@ Issues:
 - The letter after n doesn't work.
 
 New:
-- From vim mode "df" should escape.
 - Now neither OLED seems to go to sleep.
-- The JVS characters are duplicated.
 - The m character still feels fussy.
 
 Maybe:
 - Say "MAIN" for main layer.
+- For "VIM" and "JVS", the characters need to be rendered in vertical stack.
+
+Todo:
+- test leader combos
+- check window cycling
+- check undo, cut, copy, paste
+- add version number on bottom of oled
+
+
+Next:
+- Raise + D, Raise + F don't cycle windows on mac.
+- Holding Leader + J, Holding Leader + K -- don't cycle windows on mac.
+- Stacked text is not working. Let's just go with a large "V" for vim mode on the left screen.
+- right oled doesn't sleep, right oled doesn't display JVS.
+- for the right screen, maybe let's go back to small stacked text.
