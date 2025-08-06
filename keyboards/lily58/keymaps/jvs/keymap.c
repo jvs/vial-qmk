@@ -588,9 +588,17 @@ void render_stacked_letters(const char* const letters[], int count) {
     // Each letter is 24 pixels tall (3 OLED rows)
     // OLED is 128 pixels tall, so we have room for 5 letters
     for (int i = 0; i < count && i < 5; i++) {
+        int start_page = i * 3;  // 3 pages per letter
+
+        for (int page = 0; page < 3; page++) {
+            oled_set_cursor(0, start_page + page);
+            oled_write_raw_P(&letters[i][page * 24], 24);
+        }
+
+        //
         // Set position for each letter - each letter takes 3 rows (24 pixels)
-        oled_set_cursor(0, i * 3);
-        oled_write_raw_P(letters[i], 72);
+        // oled_set_cursor(0, i * 3);
+        // oled_write_raw_P(letters[i], 72);
     }
 }
 
