@@ -66,7 +66,7 @@ typedef struct {
 
 static const leader_combo_t leader_combos[] = {
     {"am", KC_AMPR, NULL},     // am -> &
-    {"bs", KC_BSLS, NULL},     // bs -> \
+    {"bs", KC_BSLS, NULL},     // bs -> backslash
 };
 
 #define LEADER_COMBO_COUNT (sizeof(leader_combos) / sizeof(leader_combo_t))
@@ -78,18 +78,24 @@ static const leader_combo_t leader_combos[] = {
 #define KEYMAP_VERSION 9
 
 // Leader sequence helper functions
-void reset_leader_sequence(void) {
+static void reset_leader_sequence(void);
+static void end_leader_sequence(void);
+static bool process_leader_sequence(void);
+static bool is_partial_match(void);
+
+// Leader sequence helper functions implementation
+static void reset_leader_sequence(void) {
     leader_active = false;
     leader_sequence_pos = 0;
     memset(leader_sequence, 0, sizeof(leader_sequence));
     layer_off(_LEADER);
 }
 
-void end_leader_sequence(void) {
+static void end_leader_sequence(void) {
     reset_leader_sequence();
 }
 
-bool process_leader_sequence(void) {
+static bool process_leader_sequence(void) {
     // Check for complete matches
     for (uint8_t i = 0; i < LEADER_COMBO_COUNT; i++) {
         if (strcmp(leader_sequence, leader_combos[i].sequence) == 0) {
@@ -102,7 +108,7 @@ bool process_leader_sequence(void) {
     return false;
 }
 
-bool is_partial_match(void) {
+static bool is_partial_match(void) {
     // Check if current sequence is a prefix of any combo
     for (uint8_t i = 0; i < LEADER_COMBO_COUNT; i++) {
         if (strncmp(leader_sequence, leader_combos[i].sequence, leader_sequence_pos) == 0) {
