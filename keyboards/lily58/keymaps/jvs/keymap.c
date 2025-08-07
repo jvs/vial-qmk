@@ -7,6 +7,7 @@ enum layer_number {
     _NUMBER,
     _VIM,
     _SYMBOL,
+    _LEADER,
 };
 
 enum custom_keycodes {
@@ -33,6 +34,9 @@ enum custom_keycodes {
 
     // Custom window switching
     WIN_SWITCH,
+
+    // Leader key
+    LEADER_KEY,
 };
 
 #include "sm_td.h"
@@ -45,10 +49,68 @@ typedef enum {
 
 static vim_mode_t current_vim_mode = VIM_NORMAL;
 
+// Leader key state tracking
+static bool leader_active = false;
+static uint8_t previous_layer = _MAIN;
+static uint16_t leader_tap_timer = 0;
+static char leader_sequence[8] = {0};
+static uint8_t leader_sequence_pos = 0;
+static uint16_t leader_sequence_timer = 0;
+
+// Leader sequence definitions
+typedef struct {
+    const char* sequence;
+    uint16_t output_keycode;
+    const char* shift_sequence;
+} leader_combo_t;
+
+static const leader_combo_t leader_combos[] = {
+    {"am", KC_AMPR, NULL},     // am -> &
+    {"bs", KC_BSLS, NULL},     // bs -> \
+};
+
+#define LEADER_COMBO_COUNT (sizeof(leader_combos) / sizeof(leader_combo_t))
+#define LEADER_TIMEOUT 1000  // 1 second timeout for sequences
+
 // OS detection will be handled by QMK's built-in detection
 
 
 #define KEYMAP_VERSION 9
+
+// Leader sequence helper functions
+void reset_leader_sequence(void) {
+    leader_active = false;
+    leader_sequence_pos = 0;
+    memset(leader_sequence, 0, sizeof(leader_sequence));
+    layer_off(_LEADER);
+}
+
+void end_leader_sequence(void) {
+    reset_leader_sequence();
+}
+
+bool process_leader_sequence(void) {
+    // Check for complete matches
+    for (uint8_t i = 0; i < LEADER_COMBO_COUNT; i++) {
+        if (strcmp(leader_sequence, leader_combos[i].sequence) == 0) {
+            // Found a match - output the result
+            tap_code16(leader_combos[i].output_keycode);
+            end_leader_sequence();
+            return true;
+        }
+    }
+    return false;
+}
+
+bool is_partial_match(void) {
+    // Check if current sequence is a prefix of any combo
+    for (uint8_t i = 0; i < LEADER_COMBO_COUNT; i++) {
+        if (strncmp(leader_sequence, leader_combos[i].sequence, leader_sequence_pos) == 0) {
+            return true;
+        }
+    }
+    return false;
+}
 
 // Combos
 enum combo_events {
@@ -92,7 +154,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   KC_TAB,   KC_Q,   KC_W,    KC_E,    KC_R,    KC_T,                      KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,    KC_MINS,
   KC_LCTL,  KC_A,   KC_S,    CKC_D,   CKC_F,   KC_G,                      KC_H,    KC_J,    KC_K,    KC_L,    KC_SCLN, KC_QUOT,
   KC_LGUI,  KC_LSFT,KC_Z,    KC_X,    KC_C,    KC_V, KC_B,         KC_B,  KC_N,    CKC_M,   CKC_COMM,KC_DOT,  KC_SLSH, KC_RSFT,
-                        MO(_SYMBOL), MO(_LOWER), KC_LSFT, KC_BSPC, KC_ENT, KC_SPC, MO(_RAISE), MO(_NUMBER)
+                        MO(_SYMBOL), MO(_LOWER), LEADER_KEY, KC_BSPC, KC_ENT, KC_SPC, MO(_RAISE), MO(_NUMBER)
 ),
 
 /* LOWER
@@ -185,6 +247,19 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   XXXXXXX, XXXXXXX, KC_0,    KC_EXLM, KC_CIRC, KC_PERC, KC_LBRC, KC_RBRC, KC_MINS, KC_ASTR, KC_COMM, KC_DOT,  XXXXXXX, XXXXXXX,
                              XXXXXXX, KC_LCBR, KC_RCBR, _______, KC_DQUO,  KC_GT,   KC_SCLN, XXXXXXX
 ),
+
+/* LEADER
+ * Leader layer - basic keys only for compatibility with sm_td
+ * Mirrors MAIN layer but with standard keycodes only
+ * Escape key ends leader sequence
+ */
+[_LEADER] = LAYOUT(
+  KC_ESC,   KC_1,   KC_2,    KC_3,    KC_4,    KC_5,                      KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    KC_BSLS,
+  KC_TAB,   KC_Q,   KC_W,    KC_E,    KC_R,    KC_T,                      KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,    KC_MINS,
+  KC_LCTL,  KC_A,   KC_S,    KC_D,    KC_F,    KC_G,                      KC_H,    KC_J,    KC_K,    KC_L,    KC_SCLN, KC_QUOT,
+  KC_LGUI,  KC_LSFT,KC_Z,    KC_X,    KC_C,    KC_V, KC_B,         KC_B,  KC_N,    KC_M,    KC_COMM, KC_DOT,  KC_SLSH, KC_RSFT,
+                        MO(_SYMBOL), MO(_LOWER), KC_LSFT, KC_BSPC, KC_ENT, KC_SPC, MO(_RAISE), MO(_NUMBER)
+),
 };
 
 // SM Tap Dance configuration
@@ -200,6 +275,68 @@ void on_smtd_action(uint16_t keycode, smtd_action action, uint8_t tap_count) {
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     if (!process_smtd(keycode, record)) {
         return false;
+    }
+
+    // Handle leader key with generous tap timeout
+    if (keycode == LEADER_KEY) {
+        if (record->event.pressed) {
+            leader_tap_timer = timer_read();
+            register_code(KC_LSFT);  // Start shift immediately for hold behavior
+        } else {
+            unregister_code(KC_LSFT);
+            // Check if this was a tap (generous 300ms timeout)
+            if (timer_elapsed(leader_tap_timer) < 300) {
+                // This was a tap - activate leader layer
+                if (!leader_active) {
+                    previous_layer = get_highest_layer(layer_state);
+                    leader_active = true;
+                    leader_sequence_pos = 0;
+                    memset(leader_sequence, 0, sizeof(leader_sequence));
+                    leader_sequence_timer = timer_read();
+                    layer_on(_LEADER);
+                }
+            }
+        }
+        return false;  // Prevent further processing
+    }
+
+    // Handle escape key during leader sequence
+    if (keycode == KC_ESC && record->event.pressed && leader_active) {
+        end_leader_sequence();
+        return false;  // Consume the escape key
+    }
+
+    // Handle key presses during leader sequence
+    if (leader_active && record->event.pressed) {
+        // Convert keycode to character for sequence matching
+        char key_char = 0;
+        if (keycode >= KC_A && keycode <= KC_Z) {
+            key_char = 'a' + (keycode - KC_A);
+        }
+
+        if (key_char != 0 && leader_sequence_pos < sizeof(leader_sequence) - 1) {
+            leader_sequence[leader_sequence_pos] = key_char;
+            leader_sequence_pos++;
+            leader_sequence[leader_sequence_pos] = '\0';  // Null terminate
+            leader_sequence_timer = timer_read();
+
+            // Check for complete match
+            if (process_leader_sequence()) {
+                return false;  // Sequence completed
+            }
+
+            // Check if this is still a valid partial sequence
+            if (!is_partial_match()) {
+                // No valid sequences start with this, end leader mode
+                end_leader_sequence();
+            }
+
+            return false;  // Consume the key
+        } else {
+            // Invalid key for sequences, end leader mode
+            end_leader_sequence();
+            return true;  // Let the key through
+        }
     }
 
     if (record->event.pressed) {
@@ -339,6 +476,12 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     return true;
 }
 
+void matrix_scan_user(void) {
+    // Handle leader sequence timeout
+    if (leader_active && timer_elapsed(leader_sequence_timer) > LEADER_TIMEOUT) {
+        end_leader_sequence();
+    }
+}
 
 layer_state_t layer_state_set_user(layer_state_t state) {
     // Reset vim mode when leaving vim layer
@@ -652,6 +795,12 @@ void render_left_display(void) {
                 {
                     const char* const letters[] = {large_S, large_Y, large_M};
                     render_stacked_letters(letters, 3);
+                }
+                break;
+            case _LEADER:
+                {
+                    const char* const letters[] = {large_L, large_E, large_A, large_D, large_R};
+                    render_stacked_letters(letters, 5);
                 }
                 break;
             default:
