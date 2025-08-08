@@ -65,8 +65,54 @@ typedef struct {
 } leader_combo_t;
 
 static const leader_combo_t leader_combos[] = {
-    {"am", KC_AMPR, NULL},     // am -> &
-    {"bs", KC_BSLS, NULL},     // bs -> backslash
+    // Single character sequences
+    {"z", KC_0, NULL},          // z -> 0
+
+    // Two character sequences
+    {"am", KC_AMPR, NULL},      // am -> &
+    {"at", KC_AT, NULL},        // at -> @
+    {"bs", KC_BSLS, NULL},      // bs -> backslash
+    {"bt", KC_GRV, NULL},       // bt -> `
+    {"ca", KC_CIRC, NULL},      // ca -> ^
+    {"cl", KC_COLN, NULL},      // cl -> :
+    {"cm", KC_COMM, NULL},      // cm -> ,
+    {"da", KC_MINS, NULL},      // da -> -
+    {"do", KC_DLR, NULL},       // do -> $
+    {"dq", KC_DQUO, NULL},      // dq -> "
+    {"dt", KC_DOT, NULL},       // dt -> .
+    {"eq", KC_EQL, NULL},       // eq -> =
+    {"ex", KC_EXLM, NULL},      // ex -> !
+    {"fo", KC_SLSH, NULL},      // fo -> /
+    {"fs", KC_SLSH, NULL},      // fs -> /
+    {"gt", KC_GT, NULL},        // gt -> >
+    {"ha", KC_HASH, NULL},      // ha -> #
+    {"la", KC_LT, NULL},        // la -> <
+    {"lb", KC_LBRC, NULL},      // lb -> [
+    {"lc", KC_LCBR, NULL},      // lc -> {
+    {"lp", KC_LPRN, NULL},      // lp -> (
+    {"ls", KC_LBRC, NULL},      // ls -> [
+    {"lt", KC_LT, NULL},        // lt -> <
+    {"pc", KC_PERC, NULL},      // pc -> %
+    {"pe", KC_PERC, NULL},      // pe -> %
+    {"pi", KC_PIPE, NULL},      // pi -> |
+    {"pl", KC_PLUS, NULL},      // pl -> +
+    {"pp", KC_PIPE, NULL},      // pp -> |
+    {"pr", KC_PERC, NULL},      // pr -> %
+    {"qm", KC_QUES, NULL},      // qm -> ?
+    {"qu", KC_QUES, NULL},      // qu -> ?
+    {"ra", KC_GT, NULL},        // ra -> >
+    {"rb", KC_RBRC, NULL},      // rb -> ]
+    {"rc", KC_RCBR, NULL},      // rc -> }
+    {"rp", KC_RPRN, NULL},      // rp -> )
+    {"rs", KC_RBRC, NULL},      // rs -> ]
+    {"sc", KC_SCLN, NULL},      // sc -> ;
+    {"se", KC_SCLN, NULL},      // se -> ;
+    {"sq", KC_QUOT, NULL},      // sq -> '
+    {"st", KC_ASTR, NULL},      // st -> *
+    {"ti", KC_TILD, NULL},      // ti -> ~
+    {"tl", KC_TILD, NULL},      // tl -> ~
+    {"un", KC_UNDS, NULL},      // un -> _
+    {"us", KC_UNDS, NULL},      // us -> _
 };
 
 #define LEADER_COMBO_COUNT (sizeof(leader_combos) / sizeof(leader_combo_t))
