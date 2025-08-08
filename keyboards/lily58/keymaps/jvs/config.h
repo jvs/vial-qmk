@@ -57,3 +57,7 @@
 #define OLED_TIMEOUT 10000
 // Enable OLED sleep
 #define OLED_SLEEP_ON_IDLE
+
+// OS Detection configuration
+#define OS_DETECTION_KEYBOARD_RESET
+#define OS_DETECTION_DEBUG_ENABLE

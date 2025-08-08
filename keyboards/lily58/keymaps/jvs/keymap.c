@@ -37,6 +37,9 @@ enum custom_keycodes {
 
     // Leader key
     LEADER_KEY,
+
+    // OS cycling
+    OS_CYCLE,
 };
 
 #include "sm_td.h"
@@ -48,6 +51,16 @@ typedef enum {
 } vim_mode_t;
 
 static vim_mode_t current_vim_mode = VIM_NORMAL;
+
+// OS override system
+typedef enum {
+    OS_OVERRIDE_AUTO,    // Use automatic detection
+    OS_OVERRIDE_MACOS,   // Force macOS behavior
+    OS_OVERRIDE_WINDOWS, // Force Windows behavior
+    OS_OVERRIDE_LINUX,   // Force Linux behavior
+} os_override_t;
+
+static os_override_t os_override = OS_OVERRIDE_AUTO;
 
 // Leader key state tracking
 static bool leader_active = false;
@@ -162,6 +175,50 @@ static bool is_partial_match(void) {
         }
     }
     return false;
+}
+
+// Get effective OS (manual override or auto-detection)
+os_variant_t get_effective_os(void) {
+    if (os_override != OS_OVERRIDE_AUTO) {
+        switch (os_override) {
+            case OS_OVERRIDE_MACOS:
+                return OS_MACOS;
+            case OS_OVERRIDE_WINDOWS:
+                return OS_WINDOWS;
+            case OS_OVERRIDE_LINUX:
+                return OS_LINUX;
+            default:
+                break;
+        }
+    }
+
+#ifdef OS_DETECTION_ENABLE
+    os_variant_t detected_os = detected_host_os();
+    if (detected_os == OS_UNSURE) {
+        return OS_MACOS;  // Default to macOS when unsure
+    }
+    return detected_os;
+#else
+    return OS_MACOS;  // Default fallback
+#endif
+}
+
+// Cycle through OS override options
+void cycle_os_override(void) {
+    switch (os_override) {
+        case OS_OVERRIDE_AUTO:
+            os_override = OS_OVERRIDE_MACOS;
+            break;
+        case OS_OVERRIDE_MACOS:
+            os_override = OS_OVERRIDE_WINDOWS;
+            break;
+        case OS_OVERRIDE_WINDOWS:
+            os_override = OS_OVERRIDE_LINUX;
+            break;
+        case OS_OVERRIDE_LINUX:
+            os_override = OS_OVERRIDE_AUTO;
+            break;
+    }
 }
 
 // Combos
@@ -296,7 +353,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   WIN_SWITCH, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,                     XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, KC_0,    XXXXXXX,
   XXXXXXX, KC_QUES, XXXXXXX, KC_EQL,  XXXXXXX, KC_TILD,                     XXXXXXX, KC_UNDS, KC_PIPE, XXXXXXX, KC_PLUS, XXXXXXX,
   KC_AMPR, KC_AT,   KC_BSLS, KC_DLR,  KC_SLSH, KC_GRV,                     KC_HASH, KC_LPRN, KC_RPRN, KC_LT,   KC_COLN, KC_QUOT,
-  XXXXXXX, XXXXXXX, KC_0,    KC_EXLM, KC_CIRC, KC_PERC, KC_LBRC, KC_RBRC, KC_MINS, KC_ASTR, KC_COMM, KC_DOT,  XXXXXXX, XXXXXXX,
+  OS_CYCLE, XXXXXXX, KC_0,    KC_EXLM, KC_CIRC, KC_PERC, KC_LBRC, KC_RBRC, KC_MINS, KC_ASTR, KC_COMM, KC_DOT,  XXXXXXX, XXXXXXX,
                              XXXXXXX, KC_LCBR, KC_RCBR, _______, KC_DQUO,  KC_GT,   KC_SCLN, XXXXXXX
 ),
 
@@ -446,23 +503,21 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             // OS-aware window switching
             case WIN_SWITCH:
                 {
-#ifdef OS_DETECTION_ENABLE
-                    os_variant_t detected_os = detected_host_os();
-                    if (detected_os == OS_MACOS || detected_os == OS_IOS) {
+                    os_variant_t effective_os = get_effective_os();
+                    if (effective_os == OS_MACOS || effective_os == OS_IOS) {
                         // Mac/iOS: Cmd+Tab for app switching
                         register_code(KC_LGUI);
                         register_code(KC_TAB);
                     } else {
-                        // Windows/Linux: Alt+` for window switching within app
+                        // Windows/Linux: Alt+Tab for app switching
                         register_code(KC_LALT);
-                        register_code(KC_GRV);
+                        register_code(KC_TAB);
                     }
-#else
-                    // Fallback to Mac mode if OS detection not available
-                    register_code(KC_LGUI);
-                    register_code(KC_TAB);
-#endif
                 }
+                break;
+
+            case OS_CYCLE:
+                cycle_os_override();
                 break;
         }
     } else {
@@ -505,22 +560,16 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
             case WIN_SWITCH:
                 {
-#ifdef OS_DETECTION_ENABLE
-                    os_variant_t detected_os = detected_host_os();
-                    if (detected_os == OS_MACOS || detected_os == OS_IOS) {
+                    os_variant_t effective_os = get_effective_os();
+                    if (effective_os == OS_MACOS || effective_os == OS_IOS) {
                         // Mac/iOS: Release Cmd+Tab
                         unregister_code(KC_TAB);
                         unregister_code(KC_LGUI);
                     } else {
-                        // Windows/Linux: Release Alt+`
-                        unregister_code(KC_GRV);
+                        // Windows/Linux: Release Alt+Tab
+                        unregister_code(KC_TAB);
                         unregister_code(KC_LALT);
                     }
-#else
-                    // Fallback to Mac mode if OS detection not available
-                    unregister_code(KC_TAB);
-                    unregister_code(KC_LGUI);
-#endif
                 }
                 break;
         }
@@ -895,10 +944,36 @@ void render_right_display(void) {
             oled_write_P(PSTR("v"), false);
             oled_write(get_u8_str(KEYMAP_VERSION, ' '), false);
 
-#ifdef OS_DETECTION_ENABLE
-            os_variant_t detected_os = detected_host_os();
             oled_set_cursor(0, 2);
-            switch (detected_os) {
+            os_variant_t effective_os = get_effective_os();
+
+            // Show manual override indicator and OS
+            if (os_override != OS_OVERRIDE_AUTO) {
+                oled_write_P(PSTR("*"), false);  // * indicates manual override
+            } else {
+                // Show detection status for auto mode
+#ifdef OS_DETECTION_ENABLE
+                static uint16_t detection_timer = 0;
+                static bool detection_started = false;
+
+                if (!detection_started) {
+                    detection_timer = timer_read();
+                    detection_started = true;
+                }
+
+                os_variant_t detected_os = detected_host_os();
+                if (detected_os == OS_UNSURE && timer_elapsed(detection_timer) < 5000) {
+                    oled_write_P(PSTR("."), false);  // Still detecting
+                } else {
+                    oled_write_P(PSTR(" "), false);  // Space for alignment
+                }
+#else
+                oled_write_P(PSTR(" "), false);
+#endif
+            }
+
+            // Show effective OS
+            switch (effective_os) {
                 case OS_MACOS:
                     oled_write_P(PSTR("MAC"), false);
                     break;
@@ -911,17 +986,10 @@ void render_right_display(void) {
                 case OS_LINUX:
                     oled_write_P(PSTR("LNX"), false);
                     break;
-                case OS_UNSURE:
-                    oled_write_P(PSTR("???"), false);
-                    break;
                 default:
                     oled_write_P(PSTR("UNK"), false);
                     break;
             }
-#else
-            oled_set_cursor(0, 2);
-            oled_write_P(PSTR("N/A"), false);
-#endif
         }
     }
 }
