@@ -204,7 +204,7 @@ os_variant_t get_effective_os(void) {
 }
 
 // Cycle through OS override options
-void cycle_os_override(void) {
+static void cycle_os_override(void) {
     switch (os_override) {
         case OS_OVERRIDE_AUTO:
             os_override = OS_OVERRIDE_MACOS;

@@ -58,6 +58,6 @@
 // Enable OLED sleep
 #define OLED_SLEEP_ON_IDLE
 
-// OS Detection configuration
-#define OS_DETECTION_KEYBOARD_RESET
-#define OS_DETECTION_DEBUG_ENABLE
+// OS Detection configuration - disabled due to RP2040 EEPROM issues
+// #define OS_DETECTION_KEYBOARD_RESET
+// #define OS_DETECTION_DEBUG_ENABLE
