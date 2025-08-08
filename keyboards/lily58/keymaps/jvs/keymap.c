@@ -52,15 +52,15 @@ typedef enum {
 
 static vim_mode_t current_vim_mode = VIM_NORMAL;
 
-// OS override system
+// OS override system - define our own OS types since OS_DETECTION is disabled
 typedef enum {
-    OS_OVERRIDE_AUTO,    // Use automatic detection
-    OS_OVERRIDE_MACOS,   // Force macOS behavior
-    OS_OVERRIDE_WINDOWS, // Force Windows behavior
-    OS_OVERRIDE_LINUX,   // Force Linux behavior
-} os_override_t;
+    CUSTOM_OS_AUTO = 0,
+    CUSTOM_OS_MACOS,
+    CUSTOM_OS_WINDOWS,
+    CUSTOM_OS_LINUX,
+} custom_os_t;
 
-static os_override_t os_override = OS_OVERRIDE_AUTO;
+static custom_os_t os_override = CUSTOM_OS_AUTO;
 
 // Leader key state tracking
 static bool leader_active = false;
@@ -177,46 +177,30 @@ static bool is_partial_match(void) {
     return false;
 }
 
-// Get effective OS (manual override or auto-detection)
-os_variant_t get_effective_os(void) {
-    if (os_override != OS_OVERRIDE_AUTO) {
-        switch (os_override) {
-            case OS_OVERRIDE_MACOS:
-                return OS_MACOS;
-            case OS_OVERRIDE_WINDOWS:
-                return OS_WINDOWS;
-            case OS_OVERRIDE_LINUX:
-                return OS_LINUX;
-            default:
-                break;
-        }
+// Get effective OS (manual override or default)
+custom_os_t get_effective_os(void) {
+    if (os_override != CUSTOM_OS_AUTO) {
+        return os_override;
     }
 
-#ifdef OS_DETECTION_ENABLE
-    os_variant_t detected_os = detected_host_os();
-    if (detected_os == OS_UNSURE) {
-        return OS_MACOS;  // Default to macOS when unsure
-    }
-    return detected_os;
-#else
-    return OS_MACOS;  // Default fallback
-#endif
+    // Default to macOS when in auto mode (no detection available)
+    return CUSTOM_OS_MACOS;
 }
 
 // Cycle through OS override options
 static void cycle_os_override(void) {
     switch (os_override) {
-        case OS_OVERRIDE_AUTO:
-            os_override = OS_OVERRIDE_MACOS;
+        case CUSTOM_OS_AUTO:
+            os_override = CUSTOM_OS_MACOS;
             break;
-        case OS_OVERRIDE_MACOS:
-            os_override = OS_OVERRIDE_WINDOWS;
+        case CUSTOM_OS_MACOS:
+            os_override = CUSTOM_OS_WINDOWS;
             break;
-        case OS_OVERRIDE_WINDOWS:
-            os_override = OS_OVERRIDE_LINUX;
+        case CUSTOM_OS_WINDOWS:
+            os_override = CUSTOM_OS_LINUX;
             break;
-        case OS_OVERRIDE_LINUX:
-            os_override = OS_OVERRIDE_AUTO;
+        case CUSTOM_OS_LINUX:
+            os_override = CUSTOM_OS_AUTO;
             break;
     }
 }
@@ -503,8 +487,8 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             // OS-aware window switching
             case WIN_SWITCH:
                 {
-                    os_variant_t effective_os = get_effective_os();
-                    if (effective_os == OS_MACOS || effective_os == OS_IOS) {
+                    custom_os_t effective_os = get_effective_os();
+                    if (effective_os == CUSTOM_OS_MACOS) {
                         // Mac/iOS: Cmd+Tab for app switching
                         register_code(KC_LGUI);
                         register_code(KC_TAB);
@@ -560,8 +544,8 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
             case WIN_SWITCH:
                 {
-                    os_variant_t effective_os = get_effective_os();
-                    if (effective_os == OS_MACOS || effective_os == OS_IOS) {
+                    custom_os_t effective_os = get_effective_os();
+                    if (effective_os == CUSTOM_OS_MACOS) {
                         // Mac/iOS: Release Cmd+Tab
                         unregister_code(KC_TAB);
                         unregister_code(KC_LGUI);
@@ -945,10 +929,10 @@ void render_right_display(void) {
             oled_write(get_u8_str(KEYMAP_VERSION, ' '), false);
 
             oled_set_cursor(0, 2);
-            os_variant_t effective_os = get_effective_os();
+            custom_os_t effective_os = get_effective_os();
 
             // Show manual override indicator and OS
-            if (os_override != OS_OVERRIDE_AUTO) {
+            if (os_override != CUSTOM_OS_AUTO) {
                 oled_write_P(PSTR("*"), false);  // * indicates manual override
             } else {
                 // Show detection status for auto mode
@@ -974,16 +958,13 @@ void render_right_display(void) {
 
             // Show effective OS
             switch (effective_os) {
-                case OS_MACOS:
+                case CUSTOM_OS_MACOS:
                     oled_write_P(PSTR("MAC"), false);
                     break;
-                case OS_IOS:
-                    oled_write_P(PSTR("iOS"), false);
-                    break;
-                case OS_WINDOWS:
+                case CUSTOM_OS_WINDOWS:
                     oled_write_P(PSTR("WIN"), false);
                     break;
-                case OS_LINUX:
+                case CUSTOM_OS_LINUX:
                     oled_write_P(PSTR("LNX"), false);
                     break;
                 default:
