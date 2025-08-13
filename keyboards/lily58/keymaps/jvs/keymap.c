@@ -11,16 +11,8 @@ enum layer_number {
 };
 
 enum custom_keycodes {
-    SMTD_KEYCODES_BEGIN = SAFE_RANGE,
-    CKC_D,   // D with LCtrl hold
-    CKC_F,   // F with LAlt hold
-    CKC_M,   // M with RAlt hold
-    CKC_COMM, // , with RCtrl hold
-    SMTD_KEYCODES_END,
-
-
-    // Vim mode keys
-    VIM_H,
+    // Our custom keycodes first (before sm_td range)
+    VIM_H = SAFE_RANGE,
     VIM_J,
     VIM_K,
     VIM_L,
@@ -46,6 +38,14 @@ enum custom_keycodes {
     OS_CUT,
     OS_COPY,
     OS_PASTE,
+
+    // sm_td keycodes after our custom ones
+    SMTD_KEYCODES_BEGIN,
+    CKC_D,   // D with LCtrl hold
+    CKC_F,   // F with LAlt hold
+    CKC_M,   // M with RAlt hold
+    CKC_COMM, // , with RCtrl hold
+    SMTD_KEYCODES_END,
 };
 
 #include "sm_td.h"
@@ -197,7 +197,7 @@ custom_os_t get_effective_os(void) {
 static void cycle_os_override(void) {
     switch (os_override) {
         case CUSTOM_OS_AUTO:
-            os_override = CUSTOM_OS_MACOS;
+            os_override = CUSTOM_OS_WINDOWS;  // Skip MAC since AUTO defaults to MAC
             break;
         case CUSTOM_OS_MACOS:
             os_override = CUSTOM_OS_WINDOWS;
@@ -960,50 +960,60 @@ void render_left_display(void) {
         switch (current_layer) {
             case _MAIN:
                 {
-                    const char* const letters[] = {large_M, large_A, large_I, large_N};
-                    render_stacked_letters(letters, 4);
+                    const char* const letters[] = {large_M};
+                    render_stacked_letters(letters, 1);
+                    // const char* const letters[] = {large_M, large_A, large_I, large_N};
+                    // render_stacked_letters(letters, 4);
                 }
                 break;
             case _LOWER:
                 {
-                    const char* const letters[] = {large_L, large_O, large_W, large_E, large_R};
-                    render_stacked_letters(letters, 5);
+                    const char* const letters[] = {large_L};
+                    render_stacked_letters(letters, 1);
+                    // const char* const letters[] = {large_L, large_O, large_W, large_E, large_R};
+                    // render_stacked_letters(letters, 5);
                 }
                 break;
             case _RAISE:
                 {
-                    const char* const letters[] = {large_R, large_A, large_I, large_S, large_E};
-                    render_stacked_letters(letters, 5);
+                    const char* const letters[] = {large_R};
+                    render_stacked_letters(letters, 1);
+                    // const char* const letters[] = {large_R, large_A, large_I, large_S, large_E};
+                    // render_stacked_letters(letters, 5);
                 }
                 break;
             case _NUMBER:
                 {
-                    const char* const letters[] = {large_N, large_U, large_M};
-                    render_stacked_letters(letters, 3);
+                    const char* const letters[] = {large_N};
+                    render_stacked_letters(letters, 1);
+                    // const char* const letters[] = {large_N, large_U, large_M};
+                    // render_stacked_letters(letters, 3);
                 }
                 break;
             case _VIM:
                 {
-                    const char* const letters[] = {large_V, large_I, large_M};
-                    render_stacked_letters(letters, 3);
+                    const char* const letters[] = {large_V};
+                    render_stacked_letters(letters, 1);
+                    // const char* const letters[] = {large_V, large_I, large_M};
+                    // render_stacked_letters(letters, 3);
                 }
                 break;
             case _SYMBOL:
                 {
-                    const char* const letters[] = {large_S, large_Y, large_M};
-                    render_stacked_letters(letters, 3);
+                    const char* const letters[] = {large_S};
+                    render_stacked_letters(letters, 1);
                 }
                 break;
             case _LEADER:
                 {
-                    const char* const letters[] = {large_L, large_E, large_A, large_D, large_R};
-                    render_stacked_letters(letters, 5);
+                    const char* const letters[] = {large_L};
+                    render_stacked_letters(letters, 1);
                 }
                 break;
             default:
                 {
-                    const char* const letters[] = {large_M, large_A, large_I, large_N};
-                    render_stacked_letters(letters, 4);
+                    const char* const letters[] = {large_M};
+                    render_stacked_letters(letters, 1);
                 }
                 break;
         }
