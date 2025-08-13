@@ -1,5 +1,8 @@
 # TODO
 
+- os cycling is not working.
+- is there a leader sequence for ":"? Maybe add more.
+
 - bring back leader key, use the layer trick, add the hold-tap logic.
 - fix OS detection.
 - do the font-bitmap thing.

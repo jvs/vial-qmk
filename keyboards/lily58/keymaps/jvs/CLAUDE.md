@@ -22,9 +22,18 @@
 - This hold-tap behavior will be handled by custom code.
 
 
+More leader key configuration:
+- Define more sequences.
+- Show feedback on the OLED:
+--- show "leader" or "lead" when leader is active.
+--- after the first key, show the remaining sequences and their outputs.
+
+
 ### Bugfixes
 
 - OS detection doesn't seem to be working on my mac. I see "???" on my right OLED.
 
 
-### Leader Key Implementation
+### Other enhancements
+
+- Reconsider Backspace and Enter.

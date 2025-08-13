@@ -40,6 +40,12 @@ enum custom_keycodes {
 
     // OS cycling
     OS_CYCLE,
+
+    // OS-aware clipboard operations
+    OS_UNDO,
+    OS_CUT,
+    OS_COPY,
+    OS_PASTE,
 };
 
 #include "sm_td.h"
@@ -98,7 +104,7 @@ static const leader_combo_t leader_combos[] = {
     {"fo", KC_SLSH, NULL},      // fo -> /
     {"fs", KC_SLSH, NULL},      // fs -> /
     {"gt", KC_GT, NULL},        // gt -> >
-    {"ha", KC_HASH, NULL},      // ha -> #
+    {"ha", KC_HASH, NULL},      // ha -> hash
     {"la", KC_LT, NULL},        // la -> <
     {"lb", KC_LBRC, NULL},      // lb -> [
     {"lc", KC_LCBR, NULL},      // lc -> {
@@ -291,7 +297,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   XXXXXXX, XXXXXXX, XXXXXXX, KC_PGUP, KC_PGDN, XXXXXXX,                     XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,
   XXXXXXX, XXXXXXX, XXXXXXX, KC_HOME, KC_END,  XXXXXXX,                     XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,
   XXXXXXX, XXXXXXX, XXXXXXX, G(S(KC_TAB)), G(KC_TAB), XXXXXXX,               OSM(MOD_LALT), OSM(MOD_LCTL), OSM(MOD_RSFT), OSM(MOD_RGUI), XXXXXXX, XXXXXXX,
-  XXXXXXX, XXXXXXX, G(KC_Z), G(KC_X), G(KC_C), G(KC_V), XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,
+  XXXXXXX, XXXXXXX, OS_UNDO, OS_CUT,  OS_COPY, OS_PASTE, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,
                              XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,  XXXXXXX, _______, XXXXXXX
 ),
 
@@ -360,7 +366,7 @@ void on_smtd_action(uint16_t keycode, smtd_action action, uint8_t tap_count) {
     switch (keycode) {
         SMTD_MT(CKC_D, KC_D, KC_LCTL)
         SMTD_MT(CKC_F, KC_F, KC_LALT)
-        SMTD_MT(CKC_M, KC_M, KC_RALT)
+        SMTD_MT(CKC_M, KC_M, KC_LALT)
         SMTD_MT(CKC_COMM, KC_COMM, KC_RCTL)
     }
 }
@@ -503,6 +509,59 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             case OS_CYCLE:
                 cycle_os_override();
                 break;
+
+            // OS-aware clipboard operations
+            case OS_UNDO:
+                {
+                    custom_os_t effective_os = get_effective_os();
+                    if (effective_os == CUSTOM_OS_MACOS) {
+                        register_code(KC_LGUI);
+                        register_code(KC_Z);
+                    } else {
+                        register_code(KC_LCTL);
+                        register_code(KC_Z);
+                    }
+                }
+                break;
+
+            case OS_CUT:
+                {
+                    custom_os_t effective_os = get_effective_os();
+                    if (effective_os == CUSTOM_OS_MACOS) {
+                        register_code(KC_LGUI);
+                        register_code(KC_X);
+                    } else {
+                        register_code(KC_LCTL);
+                        register_code(KC_X);
+                    }
+                }
+                break;
+
+            case OS_COPY:
+                {
+                    custom_os_t effective_os = get_effective_os();
+                    if (effective_os == CUSTOM_OS_MACOS) {
+                        register_code(KC_LGUI);
+                        register_code(KC_C);
+                    } else {
+                        register_code(KC_LCTL);
+                        register_code(KC_C);
+                    }
+                }
+                break;
+
+            case OS_PASTE:
+                {
+                    custom_os_t effective_os = get_effective_os();
+                    if (effective_os == CUSTOM_OS_MACOS) {
+                        register_code(KC_LGUI);
+                        register_code(KC_V);
+                    } else {
+                        register_code(KC_LCTL);
+                        register_code(KC_V);
+                    }
+                }
+                break;
         }
     } else {
         switch (keycode) {
@@ -540,6 +599,59 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 break;
             case VIM_DD:
                 unregister_code(KC_DEL);
+                break;
+
+            // OS-aware clipboard operations release
+            case OS_UNDO:
+                {
+                    custom_os_t effective_os = get_effective_os();
+                    if (effective_os == CUSTOM_OS_MACOS) {
+                        unregister_code(KC_Z);
+                        unregister_code(KC_LGUI);
+                    } else {
+                        unregister_code(KC_Z);
+                        unregister_code(KC_LCTL);
+                    }
+                }
+                break;
+
+            case OS_CUT:
+                {
+                    custom_os_t effective_os = get_effective_os();
+                    if (effective_os == CUSTOM_OS_MACOS) {
+                        unregister_code(KC_X);
+                        unregister_code(KC_LGUI);
+                    } else {
+                        unregister_code(KC_X);
+                        unregister_code(KC_LCTL);
+                    }
+                }
+                break;
+
+            case OS_COPY:
+                {
+                    custom_os_t effective_os = get_effective_os();
+                    if (effective_os == CUSTOM_OS_MACOS) {
+                        unregister_code(KC_C);
+                        unregister_code(KC_LGUI);
+                    } else {
+                        unregister_code(KC_C);
+                        unregister_code(KC_LCTL);
+                    }
+                }
+                break;
+
+            case OS_PASTE:
+                {
+                    custom_os_t effective_os = get_effective_os();
+                    if (effective_os == CUSTOM_OS_MACOS) {
+                        unregister_code(KC_V);
+                        unregister_code(KC_LGUI);
+                    } else {
+                        unregister_code(KC_V);
+                        unregister_code(KC_LCTL);
+                    }
+                }
                 break;
 
             case WIN_SWITCH:
