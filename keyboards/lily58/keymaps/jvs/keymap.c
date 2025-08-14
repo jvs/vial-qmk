@@ -30,9 +30,6 @@ enum custom_keycodes {
     // Leader key
     LEADER_KEY,
 
-    // OS cycling
-    OS_CYCLE,
-
     // OS-aware clipboard operations
     OS_UNDO,
     OS_CUT,
@@ -343,7 +340,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   WIN_SWITCH, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,                     XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, KC_0,    XXXXXXX,
   XXXXXXX, KC_QUES, XXXXXXX, KC_EQL,  XXXXXXX, KC_TILD,                     XXXXXXX, KC_UNDS, KC_PIPE, XXXXXXX, KC_PLUS, XXXXXXX,
   KC_AMPR, KC_AT,   KC_BSLS, KC_DLR,  KC_SLSH, KC_GRV,                     KC_HASH, KC_LPRN, KC_RPRN, KC_LT,   KC_COLN, KC_QUOT,
-  OS_CYCLE, XXXXXXX, KC_0,    KC_EXLM, KC_CIRC, KC_PERC, KC_LBRC, KC_RBRC, KC_MINS, KC_ASTR, KC_COMM, KC_DOT,  XXXXXXX, XXXXXXX,
+  KC_F13, XXXXXXX, KC_0,    KC_EXLM, KC_CIRC, KC_PERC, KC_LBRC, KC_RBRC, KC_MINS, KC_ASTR, KC_COMM, KC_DOT,  XXXXXXX, XXXXXXX,
                              XXXXXXX, KC_LCBR, KC_RCBR, _______, KC_DQUO,  KC_GT,   KC_SCLN, XXXXXXX
 ),
 
@@ -506,7 +503,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 }
                 break;
 
-            case OS_CYCLE:
+            case KC_F13:
                 cycle_os_override();
                 break;
 
