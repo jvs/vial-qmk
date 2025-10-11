@@ -39,10 +39,11 @@ enum custom_keycodes {
 
     // sm_td keycodes after our custom ones
     SMTD_KEYCODES_BEGIN,
-    CKC_D,   // D with LCtrl hold
-    CKC_F,   // F with LAlt hold
-    CKC_M,   // M with RAlt hold
+    CKC_D,    // D with LCtrl hold
+    CKC_F,    // F with LAlt hold
+    CKC_M,    // M with RAlt hold
     CKC_COMM, // , with RCtrl hold
+    CKC_SCLN, // ; with RShift hold
     SMTD_KEYCODES_END,
 };
 
@@ -269,7 +270,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 [_MAIN] = LAYOUT(
   KC_ESC,  KC_1,    KC_2,    KC_3,    KC_4,    KC_5,                     KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    KC_BSLS,
   KC_TAB,  KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,                     KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,    KC_MINS,
-  KC_LCTL, KC_A,    KC_S,    CKC_D,   CKC_F,   KC_G,                     KC_H,    KC_J,    KC_K,    KC_L,    KC_SCLN, KC_QUOT,
+  KC_LCTL, KC_A,    KC_S,    CKC_D,   CKC_F,   KC_G,                     KC_H,    KC_J,    KC_K,    KC_L,    CKC_SCLN,KC_QUOT,
   KC_LGUI, KC_LALT, KC_Z,    KC_X,    KC_C,    KC_V,  KC_B,       KC_B,  KC_N,    CKC_M,   CKC_COMM,KC_DOT,  KC_SLSH, KC_RSFT,
                         L_SYM,    L_LOW,   LEAD,      KC_ENT,  KC_BSPC,  KC_SPC,  L_RAS,   L_NUM
 ),
@@ -335,6 +336,7 @@ void on_smtd_action(uint16_t keycode, smtd_action action, uint8_t tap_count) {
         SMTD_MT(CKC_F, KC_F, KC_LALT)
         SMTD_MT(CKC_M, KC_M, KC_LALT)
         SMTD_MT(CKC_COMM, KC_COMM, KC_RCTL)
+        SMTD_MT(CKC_SCLN, KC_SCLN, KC_RSFT)
     }
 }
 
