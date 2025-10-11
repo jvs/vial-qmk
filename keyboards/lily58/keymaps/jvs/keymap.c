@@ -48,6 +48,25 @@ enum custom_keycodes {
 
 #include "sm_td.h"
 
+// Shorter aliases for readability
+#define XX      KC_NO    // Disabled key
+#define __      KC_TRNS  // Transparent (falls through to lower layer)
+#define LEAD    LEADER_KEY
+
+// Layer keys.
+#define L_SYM   MO(_SYMBOL)
+#define L_LOW   MO(_LOWER)
+#define L_RAS   MO(_RAISE)
+#define L_NUM   MO(_NUMBER)
+
+
+// One-shot modifiers.
+#define OM_LGUI  OSM(MOD_LGUI)
+#define OM_LSFT  OSM(MOD_LSFT)
+#define OM_LCTL  OSM(MOD_LCTL)
+#define OM_LALT  OSM(MOD_LALT)
+
+
 // Vim mode tracking
 typedef enum {
     VIM_NORMAL,
@@ -239,123 +258,73 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  * |------+------+------+------+------+------|                    |------+------+------+------+------+------|
  * |LCtrl |   A  |   S  | D/LC | F/LA |   G  |-------.    ,-------|   H  |   J  |   K  |   L  |   ;  |  '   |
  * |------+------+------+------+------+------|   B   |    |    B  |------+------+------+------+------+------|
- * | LGUI |LShift|   Z  |   X  |   C  |   V  |-------|    |-------|   N  | M/RA |,/RCtl|   .  |   /  |RShift|
+ * | LGUI | LAlt |   Z  |   X  |   C  |   V  |-------|    |-------|   N  | M/RA |,/RCtl|   .  |   /  |RShift|
  * `-----------------------------------------/       /     \      \-----------------------------------------'
- *                   | LGUI |Lower |LShift| /Leader /       \Enter \  |Space |Raise |Number|
- *                   |      |      |      |/       /         \      \ |      |      |      |
+ *                   |Symbol|Lower |Leader| / Enter /       \ Bksp \  |Space |Raise |Number|
+ *                   |      |      |Shift |/       /         \      \ |      |      |      |
  *                   `----------------------------'           '------''--------------------'
  */
 
+//        |        |        |        |        |        |                |        |        |        |        |        |        |
 [_MAIN] = LAYOUT(
-  KC_ESC,   KC_1,   KC_2,    KC_3,    KC_4,    KC_5,                      KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    KC_BSLS,
-  KC_TAB,   KC_Q,   KC_W,    KC_E,    KC_R,    KC_T,                      KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,    KC_MINS,
-  KC_LCTL,  KC_A,   KC_S,    CKC_D,   CKC_F,   KC_G,                      KC_H,    KC_J,    KC_K,    KC_L,    KC_SCLN, KC_QUOT,
-  KC_LGUI,  KC_LSFT,KC_Z,    KC_X,    KC_C,    KC_V, KC_B,         KC_B,  KC_N,    CKC_M,   CKC_COMM,KC_DOT,  KC_SLSH, KC_RSFT,
-                        MO(_SYMBOL), MO(_LOWER), LEADER_KEY, KC_BSPC, KC_ENT, KC_SPC, MO(_RAISE), MO(_NUMBER)
+  KC_ESC,  KC_1,    KC_2,    KC_3,    KC_4,    KC_5,                     KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    KC_BSLS,
+  KC_TAB,  KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,                     KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,    KC_MINS,
+  KC_LCTL, KC_A,    KC_S,    CKC_D,   CKC_F,   KC_G,                     KC_H,    KC_J,    KC_K,    KC_L,    KC_SCLN, KC_QUOT,
+  KC_LGUI, KC_LALT, KC_Z,    KC_X,    KC_C,    KC_V,  KC_B,       KC_B,  KC_N,    CKC_M,   CKC_COMM,KC_DOT,  KC_SLSH, KC_RSFT,
+                        L_SYM,    L_LOW,   LEAD,      KC_ENT,  KC_BSPC,  KC_SPC,  L_RAS,   L_NUM
 ),
 
-/* LOWER
- * ,-----------------------------------------.                    ,-----------------------------------------.
- * |      |      |      |      |      |      |                    |      |   {  |   }  |      |      | Del  |
- * |------+------+------+------+------+------|                    |------+------+------+------+------+------|
- * |      |      |      |      |      |      |                    |      |   (  |   )  |      |      |      |
- * |------+------+------+------+------+------|                    |------+------+------+------+------+------|
- * |      |OSM_GUI|OSM_SH|OSM_CT|OSM_AL|      |-------.    ,-------|Left  | Down |  Up  |Right |      |      |
- * |------+------+------+------+------+------|       |    |       |------+------+------+------+------+------|
- * |      |      |      |      |      |      |-------|    |-------|      |      |   [  |   ]  |      |      |
- * `-----------------------------------------/       /     \      \-----------------------------------------'
- *                   |      |Lower |      | /       /       \      \  |      |      |      |
- *                   |      |      |      |/       /         \      \ |      |      |      |
- *                   `----------------------------'           '------''--------------------'
- */
 [_LOWER] = LAYOUT(
-  XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,                   XXXXXXX, KC_LCBR, KC_RCBR, XXXXXXX, XXXXXXX, KC_DEL,
-  XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,                   XXXXXXX, KC_LPRN, KC_RPRN, XXXXXXX, XXXXXXX, XXXXXXX,
-  XXXXXXX, OSM(MOD_LGUI), OSM(MOD_LSFT), OSM(MOD_LCTL), OSM(MOD_LALT), XXXXXXX,  KC_LEFT, KC_DOWN, KC_UP,   KC_RGHT, XXXXXXX, XXXXXXX,
-  XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, KC_LBRC, KC_RBRC, XXXXXXX, XXXXXXX,
-                             XXXXXXX, _______, XXXXXXX, XXXXXXX, XXXXXXX,  XXXXXXX, XXXXXXX, XXXXXXX
+  XX,      XX,      XX,      XX,      XX,      XX,                       XX,      KC_LCBR, KC_RCBR, XX,      XX,      KC_DEL,
+  XX,      XX,      XX,      XX,      XX,      XX,                       XX,      KC_LPRN, KC_RPRN, XX,      XX,      XX,
+  XX,      OM_LGUI, OM_LSFT, OM_LCTL, OM_LALT, XX,                       KC_LEFT, KC_DOWN, KC_UP,   KC_RGHT, XX,      XX,
+  XX,      XX,      XX,      XX,      XX,      XX,  XX,             XX,  XX,      XX,      KC_LBRC, KC_RBRC, XX,      XX,
+                        XX,      __,      XX,       XX,             XX,  KC_UNDS, XX,      XX
 ),
 
-/* RAISE
- * ,-----------------------------------------.                    ,-----------------------------------------.
- * |      |      |      | PgUp | PgDn |      |                    |      |      |      |      |      |      |
- * |------+------+------+------+------+------|                    |------+------+------+------+------+------|
- * |      |      |      | Home | End  |      |                    |      |      |      |      |      |      |
- * |------+------+------+------+------+------|                    |------+------+------+------+------+------|
- * |      |      |      |C+S+Tab|C+Tab|      |-------.    ,-------|OSM_AL|OSM_CT|OSM_SH|OSM_GU|      |      |
- * |------+------+------+------+------+------|       |    |       |------+------+------+------+------+------|
- * |      |      | Undo | Cut  | Copy |Paste |-------|    |-------|      |      |      |      |      |      |
- * `-----------------------------------------/       /     \      \-----------------------------------------'
- *                   |      |      |      | /       /       \      \  |      |Raise |      |
- *                   |      |      |      |/       /         \      \ |      |      |      |
- *                   `----------------------------'           '------''--------------------'
- */
-
+// RAISE - Page up/down, home/end, tab switching, clipboard ops, one-shot mods
 [_RAISE] = LAYOUT(
-  XXXXXXX, XXXXXXX, XXXXXXX, KC_PGUP, KC_PGDN, XXXXXXX,                     XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,
-  XXXXXXX, XXXXXXX, XXXXXXX, KC_HOME, KC_END,  XXXXXXX,                     XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,
-  XXXXXXX, XXXXXXX, XXXXXXX, G(S(KC_TAB)), G(KC_TAB), XXXXXXX,               OSM(MOD_LALT), OSM(MOD_LCTL), OSM(MOD_RSFT), OSM(MOD_RGUI), XXXXXXX, XXXXXXX,
-  XXXXXXX, XXXXXXX, OS_UNDO, OS_CUT,  OS_COPY, OS_PASTE, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,
-                             XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,  XXXXXXX, _______, XXXXXXX
+  XX,      XX,      XX,      KC_PGUP, KC_PGDN, XX,                            XX,      XX,      XX,      XX,      XX,      XX,
+  XX,      XX,      XX,      KC_HOME, KC_END,  XX,                            XX,      XX,      XX,      XX,      XX,      XX,
+  XX,      XX,      XX,      G(S(KC_TAB)), G(KC_TAB), XX,                     OSM(MOD_LALT), OSM(MOD_LCTL), OSM(MOD_RSFT), OSM(MOD_RGUI), XX, XX,
+  XX,      XX,      OS_UNDO, OS_CUT,  OS_COPY, OS_PASTE, XX,      XX,        XX,      XX,      XX,      XX,      XX,      XX,
+                             XX,      XX,      XX,      XX,            XX,      XX,      __,      XX
 ),
 
-/* NUMBER
- * ,-----------------------------------------.                    ,-----------------------------------------.
- * |  F1  |  F2  |  F3  |  F4  |  F5  |  F6  |                    |  F7  |  F8  |  F9  | F10  | F11  | F12  |
- * |------+------+------+------+------+------|                    |------+------+------+------+------+------|
- * |      |      |   3  |   2  |   1  |   0  |                    |      |      |      |      |      |      |
- * |------+------+------+------+------+------|                    |------+------+------+------+------+------|
- * |      |      |   6  |   5  |   4  |   0  |-------.    ,-------|OSM_AL|OSM_CT|OSM_SH|OSM_GU|      |      |
- * |------+------+------+------+------+------|       |    |       |------+------+------+------+------+------|
- * |      |      |   9  |   8  |   7  |   0  |-------|    |-------|      |      |      |      |      |      |
- * `-----------------------------------------/       /     \      \-----------------------------------------'
- *                   |      |   0  |   .  | / Bksp  /       \      \  |      |TO(0) |Number|
- *                   |      |      |      |/       /         \      \ |      |      |      |
- *                   `----------------------------'           '------''--------------------'
- */
+// NUMBER - Function keys and numpad layout with one-shot mods
 [_NUMBER] = LAYOUT(
-  KC_F1,   KC_F2,   KC_F3,   KC_F4,   KC_F5,   KC_F6,                     KC_F7,   KC_F8,   KC_F9,   KC_F10,  KC_F11,  KC_F12,
-  XXXXXXX, XXXXXXX, KC_3,    KC_2,    KC_1,    KC_0,                      XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,
-  XXXXXXX, XXXXXXX, KC_6,    KC_5,    KC_4,    KC_0,                      OSM(MOD_LALT), OSM(MOD_LCTL), OSM(MOD_RSFT), OSM(MOD_RGUI), XXXXXXX, XXXXXXX,
-  XXXXXXX, XXXXXXX, KC_9,    KC_8,    KC_7,    KC_0, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,
-                             XXXXXXX, KC_0, KC_DOT, KC_BSPC, XXXXXXX,  XXXXXXX, TO(_MAIN), _______
+  KC_F1,   KC_F2,   KC_F3,   KC_F4,   KC_F5,   KC_F6,                      KC_F7,   KC_F8,   KC_F9,   KC_F10,  KC_F11,  KC_F12,
+  XX,      XX,      KC_3,    KC_2,    KC_1,    KC_0,                       XX,      XX,      XX,      XX,      XX,      XX,
+  XX,      XX,      KC_6,    KC_5,    KC_4,    KC_0,                       OSM(MOD_LALT), OSM(MOD_LCTL), OSM(MOD_RSFT), OSM(MOD_RGUI), XX, XX,
+  XX,      XX,      KC_9,    KC_8,    KC_7,    KC_0, XX,          XX,      XX,      XX,      XX,      XX,      XX,      XX,
+                             XX,      KC_0,    KC_DOT, KC_BSPC,      XX,      XX,      TO(_MAIN), __
 ),
 
-/* VIM
- * Vim-like navigation and commands
- * ESC returns to main layer, v enables shift mode
- */
+// VIM - Vim-like navigation and commands (ESC to exit, v for visual mode)
 [_VIM] = LAYOUT(
-  TO(_MAIN), XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,                     XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, VIM_0,   XXXXXXX,
-  XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,                     XXXXXXX, VIM_U,   XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,
-  XXXXXXX, XXXXXXX, XXXXXXX, VIM_DD,  XXXXXXX, XXXXXXX,                     VIM_H,   VIM_J,   VIM_K,   VIM_L,   XXXXXXX, XXXXXXX,
-  XXXXXXX, XXXXXXX, XXXXXXX, VIM_X,   XXXXXXX, VIM_V, XXXXXXX, XXXXXXX, VIM_B,   XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, VIM_DLR,
-                             XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,  XXXXXXX, XXXXXXX, XXXXXXX
+  TO(_MAIN), XX,      XX,      XX,      XX,      XX,                            XX,      XX,      XX,      XX,      VIM_0,   XX,
+  XX,      XX,      XX,      XX,      XX,      XX,                            XX,      VIM_U,   XX,      XX,      XX,      XX,
+  XX,      XX,      XX,      VIM_DD,  XX,      XX,                            VIM_H,   VIM_J,   VIM_K,   VIM_L,   XX,      XX,
+  XX,      XX,      XX,      VIM_X,   XX,      VIM_V, XX,          XX,        VIM_B,   XX,      XX,      XX,      XX,      VIM_DLR,
+                             XX,      XX,      XX,      XX,            XX,      XX,      XX,      XX
 ),
 
-/* SYMBOL
- * Symbol layer - replaces leader key sequences
- * Based on original leader mappings: am=&, at=@, bs=\, bt=`, etc.
- */
+// SYMBOL - Symbol layer with window switching and OS cycling
 [_SYMBOL] = LAYOUT(
-  WIN_SWITCH, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,                     XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, KC_0,    XXXXXXX,
-  XXXXXXX, KC_QUES, XXXXXXX, KC_EQL,  XXXXXXX, KC_TILD,                     XXXXXXX, KC_UNDS, KC_PIPE, XXXXXXX, KC_PLUS, XXXXXXX,
-  KC_AMPR, KC_AT,   KC_BSLS, KC_DLR,  KC_SLSH, KC_GRV,                     KC_HASH, KC_LPRN, KC_RPRN, KC_LT,   KC_COLN, KC_QUOT,
-  OS_CYCLE, XXXXXXX, KC_0,    KC_EXLM, KC_CIRC, KC_PERC, KC_LBRC, KC_RBRC, KC_MINS, KC_ASTR, KC_COMM, KC_DOT,  XXXXXXX, XXXXXXX,
-                             XXXXXXX, KC_LCBR, KC_RCBR, _______, KC_DQUO,  KC_GT,   KC_SCLN, XXXXXXX
+  WIN_SWITCH, XX,      XX,      XX,      XX,      XX,                            XX,      XX,      XX,      XX,      KC_0,    XX,
+  XX,      KC_QUES, XX,      KC_EQL,  XX,      KC_TILD,                      XX,      KC_UNDS, KC_PIPE, XX,      KC_PLUS, XX,
+  KC_AMPR, KC_AT,   KC_BSLS, KC_DLR,  KC_SLSH, KC_GRV,                       KC_HASH, KC_LPRN, KC_RPRN, KC_LT,   KC_COLN, KC_QUOT,
+  OS_CYCLE, XX,      KC_0,    KC_EXLM, KC_CIRC, KC_PERC, KC_LBRC, KC_RBRC,  KC_MINS, KC_ASTR, KC_COMM, KC_DOT,  XX,      XX,
+                             XX,      KC_LCBR, KC_RCBR, __,            KC_DQUO, KC_GT,   KC_SCLN, XX
 ),
 
-/* LEADER
- * Leader layer - basic keys only for compatibility with sm_td
- * Mirrors MAIN layer but with standard keycodes only
- * Escape key ends leader sequence
- */
+// LEADER - Mirrors MAIN without tap-dance keys for leader sequences (ESC to cancel)
 [_LEADER] = LAYOUT(
   KC_ESC,   KC_1,   KC_2,    KC_3,    KC_4,    KC_5,                      KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    KC_BSLS,
   KC_TAB,   KC_Q,   KC_W,    KC_E,    KC_R,    KC_T,                      KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,    KC_MINS,
   KC_LCTL,  KC_A,   KC_S,    KC_D,    KC_F,    KC_G,                      KC_H,    KC_J,    KC_K,    KC_L,    KC_SCLN, KC_QUOT,
-  KC_LGUI,  KC_LSFT,KC_Z,    KC_X,    KC_C,    KC_V, KC_B,         KC_B,  KC_N,    KC_M,    KC_COMM, KC_DOT,  KC_SLSH, KC_RSFT,
-                        MO(_SYMBOL), MO(_LOWER), KC_LSFT, KC_BSPC, KC_ENT, KC_SPC, MO(_RAISE), MO(_NUMBER)
+  KC_LGUI,  KC_LALT,KC_Z,    KC_X,    KC_C,    KC_V, KC_B,         KC_B,  KC_N,    KC_M,    KC_COMM, KC_DOT,  KC_SLSH, KC_RSFT,
+                        MO(_SYMBOL), MO(_LOWER), KC_LSFT, KC_ENT,       KC_BSPC, KC_SPC, MO(_RAISE), MO(_NUMBER)
 ),
 };
 
