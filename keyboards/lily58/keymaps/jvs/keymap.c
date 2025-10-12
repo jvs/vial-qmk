@@ -254,8 +254,8 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 break;
 
             case OS_CYCLE:
-                toggle_os();
-                oled_clear();  // Force OLED refresh to show new OS
+                last_os = current_os;  // Save current state before toggling
+                toggle_os();           // Now current_os != last_os
                 break;
 
             // OS-aware clipboard operations
