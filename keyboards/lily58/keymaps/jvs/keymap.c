@@ -77,6 +77,7 @@ typedef enum {
 } os_mode_t;
 
 static os_mode_t current_os = OS_MAC;  // Default to Mac
+static os_mode_t last_os = OS_MAC;    // For OLED tracking
 
 // Toggle between Mac and Windows
 static void toggle_os(void) {
@@ -414,7 +415,6 @@ layer_state_t layer_state_set_user(layer_state_t state) {
 static uint8_t last_left_layer = 255;
 static uint8_t last_right_layer = 255;
 static vim_mode_t last_vim_mode = VIM_NORMAL;
-static os_mode_t last_os = OS_MAC;
 
 oled_rotation_t oled_init_user(oled_rotation_t rotation) {
     // Rotate 270 degrees (or -90 degrees) for proper tall/skinny orientation
