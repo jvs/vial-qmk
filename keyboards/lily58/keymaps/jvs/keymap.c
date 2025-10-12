@@ -131,9 +131,9 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
 [_LOWER] = LAYOUT(
   XX,      XX,      XX,      XX,      XX,      XX,                       XX,      KC_LCBR, KC_RCBR, XX,      XX,      KC_DEL,
-  XX,      XX,      XX,      XX,      XX,      XX,                       XX,      KC_LPRN, KC_RPRN, XX,      XX,      XX,
+  XX,      XX,      XX,      XX,      XX,      KC_TILD,                  KC_TAB,  KC_PGUP, KC_PGDN, XX,      XX,      XX,
   XX,      OM_LGUI, OM_LSFT, OM_LCTL, OM_LALT, XX,                       KC_LEFT, KC_DOWN, KC_UP,   KC_RGHT, XX,      XX,
-  XX,      XX,      XX,      XX,      XX,      XX,  XX,             XX,  XX,      XX,      KC_LBRC, KC_RBRC, XX,      XX,
+  XX,      XX,      OS_UNDO, OS_CUT,  OS_COPY, OS_PASTE, XX,    KC_CAPS, XX,      KC_HOME, KC_END,  KC_RBRC, XX,      XX,
                         XX,      __,      XX,       XX,             XX,  KC_UNDS, XX,      XX
 ),
 
@@ -485,12 +485,7 @@ void render_left_display(void) {
 
         switch (current_layer) {
             case _MAIN:
-                {
-                    const char* const letters[] = {large_M};
-                    render_stacked_letters(letters, 1);
-                    // const char* const letters[] = {large_M, large_A, large_I, large_N};
-                    // render_stacked_letters(letters, 4);
-                }
+                // Leave blank for main layer
                 break;
             case _LOWER:
                 {
