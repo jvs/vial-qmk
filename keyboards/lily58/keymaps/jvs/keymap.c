@@ -165,10 +165,10 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
 // SYMBOL - Symbol layer with window switching
 [_SYMBOL] = LAYOUT(
-  WIN_SWITCH, XX,      XX,      XX,      XX,      XX,                            XX,      XX,      XX,      XX,      KC_0,    XX,
-  XX,      KC_QUES, XX,      KC_EQL,  XX,      KC_TILD,                      XX,      KC_UNDS, KC_PIPE, XX,      KC_PLUS, XX,
-  KC_AMPR, KC_AT,   KC_BSLS, KC_DLR,  KC_SLSH, KC_GRV,                       KC_HASH, KC_LPRN, KC_RPRN, KC_LT,   KC_COLN, KC_QUOT,
-  XX,      XX,      KC_0,    KC_EXLM, KC_CIRC, KC_PERC, KC_LBRC, KC_RBRC,  KC_MINS, KC_ASTR, KC_COMM, KC_DOT,  XX,      XX,
+  WIN_SWITCH, XX,      XX,      XX,      XX,      XX,                            XX,      XX,      XX,      XX,      XX,      XX,
+  XX,      KC_QUES, XX,      KC_EQL,  XX,      KC_TILD,                      KC_GRV,  KC_LCBR, KC_RCBR, XX,      XX,      XX,
+  KC_AMPR, KC_AT,   KC_BSLS, KC_DLR,  KC_SLSH, KC_GRV,                       KC_TILD, KC_LPRN, KC_RPRN, KC_PLUS, KC_EQL,  KC_QUOT,
+  XX,      XX,      KC_0,    KC_EXLM, KC_CIRC, KC_PERC, KC_LBRC, KC_RBRC,  KC_CIRC, KC_LBRC, KC_RBRC, KC_DOT,  XX,      XX,
                              XX,      KC_LCBR, KC_RCBR, __,            KC_DQUO, KC_GT,   KC_SCLN, XX
 ),
 
