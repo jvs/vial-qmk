@@ -137,10 +137,9 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
                         XX,      __,      XX,       XX,             XX,  KC_UNDS, XX,      XX
 ),
 
-// RAISE - Page up/down, home/end, tab switching, clipboard ops, one-shot mods
 [_RAISE] = LAYOUT(
   XX,      XX,      XX,      KC_PGUP, KC_PGDN, XX,                            XX,      XX,      XX,      XX,      XX,      XX,
-  XX,      XX,      XX,      KC_HOME, KC_END,  XX,                            XX,      XX,      XX,      XX,      XX,      XX,
+  XX,      XX,      XX,      KC_HOME, KC_END,  A(KC_T),                       XX,      XX,      XX,      XX,      XX,      XX,
   XX,      XX,      XX,      G(S(KC_TAB)), G(KC_TAB), XX,                     OSM(MOD_LALT), OSM(MOD_LCTL), OSM(MOD_RSFT), OSM(MOD_RGUI), XX, XX,
   XX,      XX,      OS_UNDO, OS_CUT,  OS_COPY, OS_PASTE, XX,      XX,        XX,      XX,      XX,      XX,      XX,      XX,
                              XX,      XX,      XX,      XX,            XX,      XX,      __,      XX
