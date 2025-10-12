@@ -77,11 +77,12 @@ typedef enum {
 } os_mode_t;
 
 static os_mode_t current_os = OS_MAC;  // Default to Mac
-static os_mode_t last_os = OS_MAC;    // For OLED tracking
+static bool os_changed = false;       // Flag to force OLED redraw
 
 // Toggle between Mac and Windows
 static void toggle_os(void) {
     current_os = (current_os == OS_MAC) ? OS_WIN : OS_MAC;
+    os_changed = true;  // Signal that OS changed
 }
 
 // Combos
@@ -255,8 +256,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 break;
 
             case OS_CYCLE:
-                last_os = current_os;  // Save current state before toggling
-                toggle_os();           // Now current_os != last_os
+                toggle_os();
                 break;
 
             // OS-aware clipboard operations
@@ -540,12 +540,12 @@ void render_right_display(void) {
     // Only redraw if layer, vim mode, or OS changed
     bool needs_redraw = (current_layer != last_right_layer) ||
                        (current_layer == _VIM && current_vim_mode != last_vim_mode) ||
-                       (current_os != last_os);
+                       os_changed;
 
     if (needs_redraw) {
         last_right_layer = current_layer;
         last_vim_mode = current_vim_mode;
-        last_os = current_os;
+        os_changed = false;  // Clear the flag after handling
         oled_clear();
 
         if (current_layer == _VIM) {
