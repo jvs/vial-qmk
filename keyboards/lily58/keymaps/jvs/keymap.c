@@ -4,7 +4,7 @@ enum layer_number {
     _MAIN = 0,
     _LOWER,
     _RAISE,
-    _NUMBER,
+    _MISC,
     _VIM,
     _SYMBOL,
 };
@@ -55,7 +55,7 @@ enum custom_keycodes {
 #define L_SYM   MO(_SYMBOL)
 #define L_LOW   MO(_LOWER)
 #define L_RAS   MO(_RAISE)
-#define L_NUM   MO(_NUMBER)
+#define L_MISC  MO(_MISC)
 
 
 // One-shot modifiers.
@@ -73,45 +73,17 @@ typedef enum {
 
 static vim_mode_t current_vim_mode = VIM_NORMAL;
 
-// OS override system - define our own OS types since OS_DETECTION is disabled
+// Simple OS toggle system
 typedef enum {
-    CUSTOM_OS_AUTO = 0,
-    CUSTOM_OS_MACOS,
-    CUSTOM_OS_WINDOWS,
-    CUSTOM_OS_LINUX,
-} custom_os_t;
+    OS_MAC = 0,
+    OS_WIN,
+} os_mode_t;
 
-static custom_os_t os_override = CUSTOM_OS_AUTO;
+static os_mode_t current_os = OS_MAC;  // Default to Mac
 
-
-#define KEYMAP_VERSION 9
-
-// Get effective OS (manual override or default)
-custom_os_t get_effective_os(void) {
-    if (os_override != CUSTOM_OS_AUTO) {
-        return os_override;
-    }
-
-    // Default to macOS when in auto mode (no detection available)
-    return CUSTOM_OS_MACOS;
-}
-
-// Cycle through OS override options
-static void cycle_os_override(void) {
-    switch (os_override) {
-        case CUSTOM_OS_AUTO:
-            os_override = CUSTOM_OS_WINDOWS;  // Skip MAC since AUTO defaults to MAC
-            break;
-        case CUSTOM_OS_MACOS:
-            os_override = CUSTOM_OS_WINDOWS;
-            break;
-        case CUSTOM_OS_WINDOWS:
-            os_override = CUSTOM_OS_LINUX;
-            break;
-        case CUSTOM_OS_LINUX:
-            os_override = CUSTOM_OS_AUTO;
-            break;
-    }
+// Toggle between Mac and Windows
+static void toggle_os(void) {
+    current_os = (current_os == OS_MAC) ? OS_WIN : OS_MAC;
 }
 
 // Combos
@@ -157,7 +129,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   KC_TAB,  KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,                     KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,    KC_MINS,
   KC_LCTL, CKC_A,   KC_S,    CKC_D,   CKC_F,   KC_G,                     KC_H,    KC_J,    KC_K,    KC_L,    CKC_SCLN,KC_QUOT,
   KC_LGUI, KC_LALT, KC_Z,    KC_X,    KC_C,    KC_V,  KC_B,       KC_B,  KC_N,    CKC_M,   CKC_COMM,KC_DOT,  KC_SLSH, KC_RSFT,
-                        L_SYM,    L_LOW,   KC_LSFT,   KC_BSPC,  KC_ENT,  KC_SPC,  L_RAS,   L_NUM
+                        L_SYM,    L_LOW,   KC_LSFT,   KC_BSPC,  KC_ENT,  KC_SPC,  L_RAS,   L_MISC
 ),
 
 [_LOWER] = LAYOUT(
@@ -178,8 +150,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 ),
 
 // NUMBER - Function keys and numpad layout with one-shot mods
-[_NUMBER] = LAYOUT(
-  KC_F1,   KC_F2,   KC_F3,   KC_F4,   KC_F5,   KC_F6,                      KC_F7,   KC_F8,   KC_F9,   KC_F10,  KC_F11,  KC_F12,
+[_MISC] = LAYOUT(
+  KC_F1,   KC_F2,   KC_F3,   KC_F4,   KC_F5,   KC_F6,                      KC_F7,   KC_F8,   KC_F9,   KC_F10,  KC_F11,  OS_CYCLE,
   XX,      XX,      KC_3,    KC_2,    KC_1,    KC_0,                       XX,      XX,      XX,      XX,      XX,      XX,
   XX,      XX,      KC_6,    KC_5,    KC_4,    KC_0,                       OSM(MOD_LALT), OSM(MOD_LCTL), OSM(MOD_RSFT), OSM(MOD_RGUI), XX, XX,
   XX,      XX,      KC_9,    KC_8,    KC_7,    KC_0, XX,          XX,      XX,      XX,      XX,      XX,      XX,      XX,
@@ -195,12 +167,12 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
                              XX,      XX,      XX,      XX,            XX,      XX,      XX,      XX
 ),
 
-// SYMBOL - Symbol layer with window switching and OS cycling
+// SYMBOL - Symbol layer with window switching
 [_SYMBOL] = LAYOUT(
   WIN_SWITCH, XX,      XX,      XX,      XX,      XX,                            XX,      XX,      XX,      XX,      KC_0,    XX,
   XX,      KC_QUES, XX,      KC_EQL,  XX,      KC_TILD,                      XX,      KC_UNDS, KC_PIPE, XX,      KC_PLUS, XX,
   KC_AMPR, KC_AT,   KC_BSLS, KC_DLR,  KC_SLSH, KC_GRV,                       KC_HASH, KC_LPRN, KC_RPRN, KC_LT,   KC_COLN, KC_QUOT,
-  OS_CYCLE, XX,      KC_0,    KC_EXLM, KC_CIRC, KC_PERC, KC_LBRC, KC_RBRC,  KC_MINS, KC_ASTR, KC_COMM, KC_DOT,  XX,      XX,
+  XX,      XX,      KC_0,    KC_EXLM, KC_CIRC, KC_PERC, KC_LBRC, KC_RBRC,  KC_MINS, KC_ASTR, KC_COMM, KC_DOT,  XX,      XX,
                              XX,      KC_LCBR, KC_RCBR, __,            KC_DQUO, KC_GT,   KC_SCLN, XX
 ),
 
@@ -277,75 +249,60 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
             // OS-aware window switching
             case WIN_SWITCH:
-                {
-                    custom_os_t effective_os = get_effective_os();
-                    if (effective_os == CUSTOM_OS_MACOS) {
-                        // Mac/iOS: Cmd+Tab for app switching
-                        register_code(KC_LGUI);
-                        register_code(KC_TAB);
-                    } else {
-                        // Windows/Linux: Alt+Tab for app switching
-                        register_code(KC_LALT);
-                        register_code(KC_TAB);
-                    }
+                if (current_os == OS_MAC) {
+                    // Mac: Cmd+Tab for app switching
+                    register_code(KC_LGUI);
+                    register_code(KC_TAB);
+                } else {
+                    // Windows: Alt+Tab for app switching
+                    register_code(KC_LALT);
+                    register_code(KC_TAB);
                 }
                 break;
 
             case OS_CYCLE:
-                cycle_os_override();
+                toggle_os();
                 oled_clear();  // Force OLED refresh to show new OS
-                break;  // Consume the keycode, don't send to computer
+                break;
 
             // OS-aware clipboard operations
             case OS_UNDO:
-                {
-                    custom_os_t effective_os = get_effective_os();
-                    if (effective_os == CUSTOM_OS_MACOS) {
-                        register_code(KC_LGUI);
-                        register_code(KC_Z);
-                    } else {
-                        register_code(KC_LCTL);
-                        register_code(KC_Z);
-                    }
+                if (current_os == OS_MAC) {
+                    register_code(KC_LGUI);
+                    register_code(KC_Z);
+                } else {
+                    register_code(KC_LCTL);
+                    register_code(KC_Z);
                 }
                 break;
 
             case OS_CUT:
-                {
-                    custom_os_t effective_os = get_effective_os();
-                    if (effective_os == CUSTOM_OS_MACOS) {
-                        register_code(KC_LGUI);
-                        register_code(KC_X);
-                    } else {
-                        register_code(KC_LCTL);
-                        register_code(KC_X);
-                    }
+                if (current_os == OS_MAC) {
+                    register_code(KC_LGUI);
+                    register_code(KC_X);
+                } else {
+                    register_code(KC_LCTL);
+                    register_code(KC_X);
                 }
                 break;
 
             case OS_COPY:
-                {
-                    custom_os_t effective_os = get_effective_os();
-                    if (effective_os == CUSTOM_OS_MACOS) {
-                        register_code(KC_LGUI);
-                        register_code(KC_C);
-                    } else {
-                        register_code(KC_LCTL);
-                        register_code(KC_C);
-                    }
+                if (current_os == OS_MAC) {
+                    register_code(KC_LGUI);
+                    register_code(KC_C);
+                } else {
+                    register_code(KC_LCTL);
+                    register_code(KC_C);
                 }
                 break;
 
             case OS_PASTE:
-                {
-                    custom_os_t effective_os = get_effective_os();
-                    if (effective_os == CUSTOM_OS_MACOS) {
-                        register_code(KC_LGUI);
-                        register_code(KC_V);
-                    } else {
-                        register_code(KC_LCTL);
-                        register_code(KC_V);
-                    }
+                if (current_os == OS_MAC) {
+                    register_code(KC_LGUI);
+                    register_code(KC_V);
+                } else {
+                    register_code(KC_LCTL);
+                    register_code(KC_V);
                 }
                 break;
         }
@@ -389,69 +346,54 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
             // OS-aware clipboard operations release
             case OS_UNDO:
-                {
-                    custom_os_t effective_os = get_effective_os();
-                    if (effective_os == CUSTOM_OS_MACOS) {
-                        unregister_code(KC_Z);
-                        unregister_code(KC_LGUI);
-                    } else {
-                        unregister_code(KC_Z);
-                        unregister_code(KC_LCTL);
-                    }
+                if (current_os == OS_MAC) {
+                    unregister_code(KC_Z);
+                    unregister_code(KC_LGUI);
+                } else {
+                    unregister_code(KC_Z);
+                    unregister_code(KC_LCTL);
                 }
                 break;
 
             case OS_CUT:
-                {
-                    custom_os_t effective_os = get_effective_os();
-                    if (effective_os == CUSTOM_OS_MACOS) {
-                        unregister_code(KC_X);
-                        unregister_code(KC_LGUI);
-                    } else {
-                        unregister_code(KC_X);
-                        unregister_code(KC_LCTL);
-                    }
+                if (current_os == OS_MAC) {
+                    unregister_code(KC_X);
+                    unregister_code(KC_LGUI);
+                } else {
+                    unregister_code(KC_X);
+                    unregister_code(KC_LCTL);
                 }
                 break;
 
             case OS_COPY:
-                {
-                    custom_os_t effective_os = get_effective_os();
-                    if (effective_os == CUSTOM_OS_MACOS) {
-                        unregister_code(KC_C);
-                        unregister_code(KC_LGUI);
-                    } else {
-                        unregister_code(KC_C);
-                        unregister_code(KC_LCTL);
-                    }
+                if (current_os == OS_MAC) {
+                    unregister_code(KC_C);
+                    unregister_code(KC_LGUI);
+                } else {
+                    unregister_code(KC_C);
+                    unregister_code(KC_LCTL);
                 }
                 break;
 
             case OS_PASTE:
-                {
-                    custom_os_t effective_os = get_effective_os();
-                    if (effective_os == CUSTOM_OS_MACOS) {
-                        unregister_code(KC_V);
-                        unregister_code(KC_LGUI);
-                    } else {
-                        unregister_code(KC_V);
-                        unregister_code(KC_LCTL);
-                    }
+                if (current_os == OS_MAC) {
+                    unregister_code(KC_V);
+                    unregister_code(KC_LGUI);
+                } else {
+                    unregister_code(KC_V);
+                    unregister_code(KC_LCTL);
                 }
                 break;
 
             case WIN_SWITCH:
-                {
-                    custom_os_t effective_os = get_effective_os();
-                    if (effective_os == CUSTOM_OS_MACOS) {
-                        // Mac/iOS: Release Cmd+Tab
-                        unregister_code(KC_TAB);
-                        unregister_code(KC_LGUI);
-                    } else {
-                        // Windows/Linux: Release Alt+Tab
-                        unregister_code(KC_TAB);
-                        unregister_code(KC_LALT);
-                    }
+                if (current_os == OS_MAC) {
+                    // Mac/iOS: Release Cmd+Tab
+                    unregister_code(KC_TAB);
+                    unregister_code(KC_LGUI);
+                } else {
+                    // Windows/Linux: Release Alt+Tab
+                    unregister_code(KC_TAB);
+                    unregister_code(KC_LALT);
                 }
                 break;
         }
@@ -573,12 +515,10 @@ void render_left_display(void) {
                     // render_stacked_letters(letters, 5);
                 }
                 break;
-            case _NUMBER:
+            case _MISC:
                 {
-                    const char* const letters[] = {large_N};
+                    const char* const letters[] = {large_M};
                     render_stacked_letters(letters, 1);
-                    // const char* const letters[] = {large_N, large_U, large_M};
-                    // render_stacked_letters(letters, 3);
                 }
                 break;
             case _VIM:
@@ -631,52 +571,11 @@ void render_right_display(void) {
             // Show symbol layer active
             render_simple_vertical_text("S");
         } else {
-            // Show version and detected OS
-            oled_write_P(PSTR("v"), false);
-            oled_write(get_u8_str(KEYMAP_VERSION, ' '), false);
-
-            oled_set_cursor(0, 2);
-            custom_os_t effective_os = get_effective_os();
-
-            // Show manual override indicator and OS
-            if (os_override != CUSTOM_OS_AUTO) {
-                oled_write_P(PSTR("*"), false);  // * indicates manual override
+            // Show current OS
+            if (current_os == OS_MAC) {
+                render_simple_vertical_text("MAC");
             } else {
-                // Show detection status for auto mode
-#ifdef OS_DETECTION_ENABLE
-                static uint16_t detection_timer = 0;
-                static bool detection_started = false;
-
-                if (!detection_started) {
-                    detection_timer = timer_read();
-                    detection_started = true;
-                }
-
-                os_variant_t detected_os = detected_host_os();
-                if (detected_os == OS_UNSURE && timer_elapsed(detection_timer) < 5000) {
-                    oled_write_P(PSTR("."), false);  // Still detecting
-                } else {
-                    oled_write_P(PSTR(" "), false);  // Space for alignment
-                }
-#else
-                oled_write_P(PSTR(" "), false);
-#endif
-            }
-
-            // Show effective OS
-            switch (effective_os) {
-                case CUSTOM_OS_MACOS:
-                    oled_write_P(PSTR("MAC"), false);
-                    break;
-                case CUSTOM_OS_WINDOWS:
-                    oled_write_P(PSTR("WIN"), false);
-                    break;
-                case CUSTOM_OS_LINUX:
-                    oled_write_P(PSTR("LNX"), false);
-                    break;
-                default:
-                    oled_write_P(PSTR("UNK"), false);
-                    break;
+                render_simple_vertical_text("WIN");
             }
         }
     }
