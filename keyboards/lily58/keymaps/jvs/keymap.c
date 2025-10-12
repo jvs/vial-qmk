@@ -414,6 +414,7 @@ layer_state_t layer_state_set_user(layer_state_t state) {
 static uint8_t last_left_layer = 255;
 static uint8_t last_right_layer = 255;
 static vim_mode_t last_vim_mode = VIM_NORMAL;
+static os_mode_t last_os = OS_MAC;
 
 oled_rotation_t oled_init_user(oled_rotation_t rotation) {
     // Rotate 270 degrees (or -90 degrees) for proper tall/skinny orientation
@@ -536,13 +537,15 @@ void render_left_display(void) {
 void render_right_display(void) {
     uint8_t current_layer = get_highest_layer(layer_state);
 
-    // Only redraw if layer or vim mode changed
+    // Only redraw if layer, vim mode, or OS changed
     bool needs_redraw = (current_layer != last_right_layer) ||
-                       (current_layer == _VIM && current_vim_mode != last_vim_mode);
+                       (current_layer == _VIM && current_vim_mode != last_vim_mode) ||
+                       (current_os != last_os);
 
     if (needs_redraw) {
         last_right_layer = current_layer;
         last_vim_mode = current_vim_mode;
+        last_os = current_os;
         oled_clear();
 
         if (current_layer == _VIM) {
@@ -559,11 +562,11 @@ void render_right_display(void) {
             // Show symbol layer active
             render_simple_vertical_text("S");
         } else {
-            // Show current OS
+            // Show current OS horizontally
             if (current_os == OS_MAC) {
-                render_simple_vertical_text("MAC");
+                oled_write_P(PSTR("MAC"), false);
             } else {
-                render_simple_vertical_text("WIN");
+                oled_write_P(PSTR("WIN"), false);
             }
         }
     }
