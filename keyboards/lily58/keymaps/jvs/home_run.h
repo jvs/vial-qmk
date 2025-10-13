@@ -147,6 +147,16 @@ static void home_run_buffer_add(home_run_tracked_key_t* tracked, uint16_t keycod
     }
 }
 
+// Helper: Calculate elapsed time between two timestamps, handling timer wraparound
+static uint16_t timer_elapsed_safe(uint16_t start, uint16_t end) {
+    if (end >= start) {
+        return end - start;
+    } else {
+        // Timer wrapped around
+        return (UINT16_MAX - start) + end + 1;
+    }
+}
+
 // Helper: Try to resolve a home-run key from buffered events
 // Returns the resolved state, or UNKNOWN if we can't determine yet
 // start_idx: index of the home-run key press in the buffer
@@ -223,16 +233,6 @@ static home_run_state_t home_run_try_resolve_from_buffer(
     }
 
     return HOME_RUN_STATE_UNKNOWN; // Still don't know
-}
-
-// Helper: Calculate elapsed time between two timestamps, handling timer wraparound
-static uint16_t timer_elapsed_safe(uint16_t start, uint16_t end) {
-    if (end >= start) {
-        return end - start;
-    } else {
-        // Timer wrapped around
-        return (UINT16_MAX - start) + end + 1;
-    }
 }
 
 // Replay buffered events with iterative home-run key resolution
