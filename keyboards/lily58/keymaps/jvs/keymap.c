@@ -125,18 +125,27 @@ enum combo_events {
     DF_VIM,
     VIM_JK_ESC,
     ALT_ESC_WIN,
+    UI_BSPC,      // Right hand: U+I for backspace
+    OP_DEL,       // Right hand: O+P for delete
+    KL_ENT,       // Right hand: K+L for enter
 };
 
 const uint16_t PROGMEM jk_combo[] = {KC_J, KC_K, COMBO_END};
 const uint16_t PROGMEM df_combo[] = {HR_D, HR_F, COMBO_END};
 const uint16_t PROGMEM vim_jk_combo[] = {VIM_J, VIM_K, COMBO_END};
 const uint16_t PROGMEM alt_esc_combo[] = {KC_LALT, KC_ESC, COMBO_END};
+const uint16_t PROGMEM ui_combo[] = {KC_U, KC_I, COMBO_END};
+const uint16_t PROGMEM op_combo[] = {KC_O, KC_P, COMBO_END};
+const uint16_t PROGMEM kl_combo[] = {KC_K, KC_L, COMBO_END};
 
 combo_t key_combos[COMBO_COUNT] = {
     [JK_ESC] = COMBO(jk_combo, KC_ESC),
     [DF_VIM] = COMBO(df_combo, TO(_VIM)),
     [VIM_JK_ESC] = COMBO(vim_jk_combo, TO(_MAIN)),
     [ALT_ESC_WIN] = COMBO(alt_esc_combo, WIN_SWITCH),
+    [UI_BSPC] = COMBO(ui_combo, KC_BSPC),
+    [OP_DEL] = COMBO(op_combo, KC_DEL),
+    [KL_ENT] = COMBO(kl_combo, KC_ENT),
 };
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
@@ -151,7 +160,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  * |------+------+------+------+------+------|   B   |    |    B  |------+------+------+------+------+------|
  * | LGUI | LAlt |   Z  |   X  |   C  |   V  |-------|    |-------|   N  | M/RA |,/RCtl|   .  |   /  |RShift|
  * `-----------------------------------------/       /     \      \-----------------------------------------'
- *                   |Symbol|Lower |Leader| / Bksp  /       \ Enter\  |Space |Raise |Number|
+ *                   |Symbol|Lower |Leader| / Space /       \  Tab \  |Space |Raise |Number|
  *                   |      |      |Shift |/       /         \      \ |      |      |      |
  *                   `----------------------------'           '------''--------------------'
  */
@@ -162,7 +171,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   KC_TAB,  KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,                     KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,    KC_MINS,
   KC_LCTL, KC_A,    KC_S,    HR_D,   HR_F,   KC_G,                     KC_H,    KC_J,    KC_K,    KC_L,    HR_SCLN,KC_QUOT,
   KC_LGUI, KC_LALT, KC_Z,    HR_X,    HR_C,    KC_V,  KC_B,       KC_B,  KC_N,    HR_M,    HR_COMM, KC_DOT,  KC_SLSH, KC_RSFT,
-                        L_SYM,    L_LOW,   KC_LSFT,   KC_BSPC,  KC_ENT,  KC_SPC,  L_RAS,   L_MISC
+                        L_SYM,    L_LOW,   KC_LSFT,   KC_SPC,  KC_TAB,  KC_SPC,  L_RAS,   L_MISC
 ),
 
 [_LOWER] = LAYOUT(
