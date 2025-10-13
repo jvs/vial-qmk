@@ -97,6 +97,14 @@ __attribute__((weak)) bool home_run_requires_opposite_hand(uint16_t keycode);
 static home_run_tracked_key_t home_run_tracked[HOME_RUN_MAX_ACTIVE];
 
 /* ************************************* *
+ *      MENU LAYER STATE                 *
+ * ************************************* */
+
+// Track active menu layer for undo/replace behavior
+static uint16_t active_menu_key = 0;      // Which home-run key activated the menu
+static uint8_t menu_emit_length = 0;       // Length of last emitted sequence
+
+/* ************************************* *
  *         HELPER FUNCTIONS              *
  * ************************************* */
 
@@ -199,6 +207,43 @@ static void home_run_clear_tracked(home_run_tracked_key_t* tracked) {
     tracked->other_key_pressed = false;
     tracked->other_key_released = false;
     tracked->replaying = false;
+}
+
+/* ************************************* *
+ *      MENU LAYER FUNCTIONS             *
+ * ************************************* */
+
+// Emit a string for a menu layer item with automatic undo/replace
+// Returns false to indicate keycode was handled
+static bool menu_emit(uint16_t menu_key, const char* str) {
+    uint8_t len = 0;
+
+    // Calculate string length
+    while (str[len] != '\0') len++;
+
+    // If this menu is active and we previously emitted something, backspace it first
+    if (active_menu_key == menu_key && menu_emit_length > 0) {
+        for (uint8_t i = 0; i < menu_emit_length; i++) {
+            tap_code(KC_BSPC);
+        }
+    }
+
+    // Set this as the active menu
+    active_menu_key = menu_key;
+    menu_emit_length = len;
+
+    // Emit the string
+    send_string(str);
+
+    return false;
+}
+
+// Clear menu state when menu key is released
+static void clear_menu_state(uint16_t menu_key) {
+    if (active_menu_key == menu_key) {
+        active_menu_key = 0;
+        menu_emit_length = 0;
+    }
 }
 
 /* ************************************* *
@@ -411,6 +456,27 @@ bool process_home_run(uint16_t keycode, keyrecord_t* record) {
 // Opposite-hand momentary layer: only triggers as layer for opposite-hand keys
 // Usage: HOME_RUN_OPPOSITE_ML(keycode, tap_key, layer)
 #define HOME_RUN_OPPOSITE_ML(hr_keycode, tap_key, layer) HOME_RUN_ML(hr_keycode, tap_key, layer)
+
+// Opposite-hand menu layer: like OPPOSITE_ML but with menu selection behavior
+// When held, allows selecting items from a menu - pressing a new menu item
+// backspaces the previous selection and emits the new one
+// Usage: HOME_RUN_OPPOSITE_MENU_ML(keycode, tap_key, layer)
+#define HOME_RUN_OPPOSITE_MENU_ML(hr_keycode, tap_key, layer)  \
+    case hr_keycode: {                                          \
+        switch (action) {                                       \
+            case HOME_RUN_ACTION_TAP:                           \
+                tap_code16(tap_key);                            \
+                break;                                          \
+            case HOME_RUN_ACTION_HOLD:                          \
+                layer_on(layer);                                \
+                break;                                          \
+            case HOME_RUN_ACTION_RELEASE:                       \
+                layer_off(layer);                               \
+                clear_menu_state(hr_keycode);                   \
+                break;                                          \
+        }                                                       \
+        break;                                                  \
+    }
 
 /* ************************************* *
  *          USAGE INSTRUCTIONS           *

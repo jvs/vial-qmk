@@ -7,6 +7,8 @@ enum layer_number {
     _MISC,
     _VIM,
     _SYMBOL,
+    _COMPARE,
+    _MATH,
 };
 
 enum custom_keycodes {
@@ -34,11 +36,43 @@ enum custom_keycodes {
     OS_COPY,
     OS_PASTE,
 
+    // Comparison operator keycodes (menu layer with smart spacing)
+    CMP_EQ,      // " == "
+    CMP_NE,      // " != "
+    CMP_LT,      // " < "
+    CMP_GT,      // " > "
+    CMP_LE,      // " <= "
+    CMP_GE,      // " >= "
+    CMP_IN,      // " in "
+    CMP_NIN,     // " not in "
+    CMP_IS,      // " is "
+    CMP_ISN,     // " is not "
+    CMP_AND,     // " and "
+    CMP_OR,      // " or "
+    CMP_ASSIGN,  // " = "
+
+    // Math operator keycodes (menu layer)
+    MATH_ADD,    // " + "
+    MATH_SUB,    // " - "
+    MATH_MUL,    // " * "
+    MATH_DIV,    // " / "
+    MATH_FDIV,   // " // "
+    MATH_MOD,    // " % "
+    MATH_POW,    // "**" (no spaces)
+    MATH_ADDEQ,  // " += "
+    MATH_SUBEQ,  // " -= "
+    MATH_MULEQ,  // " *= "
+    MATH_DIVEQ,  // " /= "
+
     // home_run keycodes after our custom ones
     HOME_RUN_KEYCODES_BEGIN,
-    HR_D,    // D with LCtrl hold
-    HR_F,    // F with LAlt hold
-    HR_SCLN, // ; with RShift hold
+    HR_C,    // C with _COMPARE menu layer (opposite-hand)
+    HR_X,    // X with _MATH menu layer (opposite-hand)
+    HR_D,    // D with LCtrl hold (opposite-hand)
+    HR_F,    // F with LAlt hold (opposite-hand)
+    HR_M,    // M with RAlt hold (opposite-hand)
+    HR_COMM, // , with RCtrl hold (opposite-hand)
+    HR_SCLN, // ; with RShift hold (opposite-hand)
     HOME_RUN_KEYCODES_END,
 };
 
@@ -113,7 +147,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  * |------+------+------+------+------+------|                    |------+------+------+------+------+------|
  * | Tab  |   Q  |   W  |   E  |   R  |   T  |                    |   Y  |   U  |   I  |   O  |   P  |  -   |
  * |------+------+------+------+------+------|                    |------+------+------+------+------+------|
- * |LCtrl |   A  |   S  | D/LC | F/LA |   G  |-------.    ,-------|   H  |   J  |   K  |   L  |   ;  |  '   |
+ * |LCtrl |   A  |   S  | D/LC | F/LA |   G  |-------.    ,-------|   H  |   J  |   K  |   L  | ;/RS |  '   |
  * |------+------+------+------+------+------|   B   |    |    B  |------+------+------+------+------+------|
  * | LGUI | LAlt |   Z  |   X  |   C  |   V  |-------|    |-------|   N  | M/RA |,/RCtl|   .  |   /  |RShift|
  * `-----------------------------------------/       /     \      \-----------------------------------------'
@@ -127,7 +161,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   KC_ESC,  KC_1,    KC_2,    KC_3,    KC_4,    KC_5,                     KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    KC_BSLS,
   KC_TAB,  KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,                     KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,    KC_MINS,
   KC_LCTL, KC_A,    KC_S,    HR_D,   HR_F,   KC_G,                     KC_H,    KC_J,    KC_K,    KC_L,    HR_SCLN,KC_QUOT,
-  KC_LGUI, KC_LALT, KC_Z,    KC_X,    KC_C,    KC_V,  KC_B,       KC_B,  KC_N,    KC_M,    KC_COMM, KC_DOT,  KC_SLSH, KC_RSFT,
+  KC_LGUI, KC_LALT, KC_Z,    HR_X,    HR_C,    KC_V,  KC_B,       KC_B,  KC_N,    HR_M,    HR_COMM, KC_DOT,  KC_SLSH, KC_RSFT,
                         L_SYM,    L_LOW,   KC_LSFT,   KC_BSPC,  KC_ENT,  KC_SPC,  L_RAS,   L_MISC
 ),
 
@@ -174,14 +208,52 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
                              XX,      KC_LCBR, KC_RCBR, __,            KC_DQUO, KC_GT,   KC_SCLN, XX
 ),
 
+// COMPARE - Python comparison operators with smart spacing (activated by holding C)
+[_COMPARE] = LAYOUT(
+  XX,      XX,      XX,      XX,      XX,      XX,                            XX,      CMP_GE,  CMP_IS,  CMP_OR,  CMP_NIN, XX,
+  XX,      XX,      XX,      XX,      XX,      XX,                            XX,      XX,      XX,      XX,      XX,      XX,
+  XX,      XX,      XX,      XX,      XX,      XX,                            CMP_ASSIGN, CMP_EQ, CMP_NE, CMP_IN,  CMP_AND, XX,
+  XX,      XX,      XX,      XX,      XX,      XX,      XX,      XX,         XX,      CMP_LE,  CMP_LT,  CMP_GT,  CMP_ISN, XX,
+                             XX,      XX,      XX,      XX,            XX,      XX,      XX,      XX
+),
+
+// MATH - Python math operators (activated by holding X)
+[_MATH] = LAYOUT(
+  XX,      XX,      XX,      XX,      XX,      XX,                            XX,      MATH_ADDEQ, MATH_SUBEQ, MATH_MULEQ, MATH_DIVEQ, XX,
+  XX,      XX,      XX,      XX,      XX,      XX,                            XX,      XX,         XX,         XX,         XX,         XX,
+  XX,      XX,      XX,      XX,      XX,      XX,                            MATH_ADD, MATH_SUB, MATH_MUL,   MATH_DIV,   XX,         XX,
+  XX,      XX,      XX,      XX,      XX,      XX,      XX,      XX,         XX,      MATH_FDIV,  MATH_MOD,   MATH_POW,   XX,         XX,
+                             XX,      XX,      XX,      XX,            XX,      XX,      XX,        XX
+),
+
 };
 
 // Home Run Modifiers configuration
 void on_home_run_action(uint16_t keycode, home_run_action_t action) {
     switch (keycode) {
-        HOME_RUN_MT(HR_D, KC_D, KC_LCTL)
-        HOME_RUN_MT(HR_F, KC_F, KC_LALT)
-        HOME_RUN_MT(HR_SCLN, KC_SCLN, KC_RSFT)
+        HOME_RUN_OPPOSITE_MENU_ML(HR_C, KC_C, _COMPARE)
+        HOME_RUN_OPPOSITE_MENU_ML(HR_X, KC_X, _MATH)
+        HOME_RUN_OPPOSITE_MT(HR_D, KC_D, KC_LCTL)
+        HOME_RUN_OPPOSITE_MT(HR_F, KC_F, KC_LALT)
+        HOME_RUN_OPPOSITE_MT(HR_M, KC_M, KC_RALT)
+        HOME_RUN_OPPOSITE_MT(HR_COMM, KC_COMM, KC_RCTL)
+        HOME_RUN_OPPOSITE_MT(HR_SCLN, KC_SCLN, KC_RSFT)
+    }
+}
+
+// Enable opposite-hand detection for all home run modifiers
+bool home_run_requires_opposite_hand(uint16_t keycode) {
+    switch (keycode) {
+        case HR_C:
+        case HR_X:
+        case HR_D:
+        case HR_F:
+        case HR_M:
+        case HR_COMM:
+        case HR_SCLN:
+            return true;
+        default:
+            return false;
     }
 }
 
@@ -299,6 +371,58 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                     register_code(KC_V);
                 }
                 break;
+
+            // Comparison operators (menu layer with auto-undo)
+            case CMP_EQ:
+                return menu_emit(HR_C, " == ");
+            case CMP_NE:
+                return menu_emit(HR_C, " != ");
+            case CMP_LT:
+                return menu_emit(HR_C, " < ");
+            case CMP_GT:
+                return menu_emit(HR_C, " > ");
+            case CMP_LE:
+                return menu_emit(HR_C, " <= ");
+            case CMP_GE:
+                return menu_emit(HR_C, " >= ");
+            case CMP_IN:
+                return menu_emit(HR_C, " in ");
+            case CMP_NIN:
+                return menu_emit(HR_C, " not in ");
+            case CMP_IS:
+                return menu_emit(HR_C, " is ");
+            case CMP_ISN:
+                return menu_emit(HR_C, " is not ");
+            case CMP_AND:
+                return menu_emit(HR_C, " and ");
+            case CMP_OR:
+                return menu_emit(HR_C, " or ");
+            case CMP_ASSIGN:
+                return menu_emit(HR_C, " = ");
+
+            // Math operators (menu layer with auto-undo)
+            case MATH_ADD:
+                return menu_emit(HR_X, " + ");
+            case MATH_SUB:
+                return menu_emit(HR_X, " - ");
+            case MATH_MUL:
+                return menu_emit(HR_X, " * ");
+            case MATH_DIV:
+                return menu_emit(HR_X, " / ");
+            case MATH_FDIV:
+                return menu_emit(HR_X, " // ");
+            case MATH_MOD:
+                return menu_emit(HR_X, " % ");
+            case MATH_POW:
+                return menu_emit(HR_X, "**");  // No spaces for power operator
+            case MATH_ADDEQ:
+                return menu_emit(HR_X, " += ");
+            case MATH_SUBEQ:
+                return menu_emit(HR_X, " -= ");
+            case MATH_MULEQ:
+                return menu_emit(HR_X, " *= ");
+            case MATH_DIVEQ:
+                return menu_emit(HR_X, " /= ");
         }
     } else {
         switch (keycode) {
@@ -392,6 +516,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 break;
         }
     }
+
     return true;
 }
 
@@ -521,6 +646,18 @@ void render_left_display(void) {
             case _SYMBOL:
                 {
                     const char* const letters[] = {large_S};
+                    render_stacked_letters(letters, 1);
+                }
+                break;
+            case _COMPARE:
+                {
+                    const char* const letters[] = {large_C};
+                    render_stacked_letters(letters, 1);
+                }
+                break;
+            case _MATH:
+                {
+                    const char* const letters[] = {large_X};
                     render_stacked_letters(letters, 1);
                 }
                 break;
