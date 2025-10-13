@@ -116,6 +116,87 @@ You can customize the timing by defining these before including `home_run.h`:
 
 Home Run Modifiers works correctly with split keyboards. The timing functions (`timer_read()` and `timer_elapsed()`) are designed to work across split halves, and event replay uses QMK's standard `process_record()` mechanism.
 
+## Opposite-Hand Detection
+
+For split keyboards, you can enable opposite-hand detection to eliminate latency for same-hand rolls. When enabled, a home run key will only trigger as a modifier when keys on the opposite hand are pressed. Same-hand key presses immediately resolve the home run key as a normal keypress.
+
+**Use case**: Design layers where left-hand keys activate layers and right-hand keys contain the layer content (or vice versa). This pattern eliminates all buffering latency for fast same-hand typing rolls.
+
+### Setup
+
+1. Use the `HOME_RUN_OPPOSITE_*` macros in your action callback:
+
+```c
+void on_home_run_action(uint16_t keycode, home_run_action_t action) {
+    switch (keycode) {
+        HOME_RUN_OPPOSITE_ML(HR_D, KC_D, _LOWER)  // Left hand activates layer
+        HOME_RUN_OPPOSITE_ML(HR_F, KC_F, _RAISE)  // Right hand content only
+        HOME_RUN_MT(HR_SCLN, KC_SCLN, KC_RSFT)   // Regular timing-only detection
+    }
+}
+```
+
+2. Implement `home_run_requires_opposite_hand()` to identify which keys use opposite-hand detection:
+
+```c
+bool home_run_requires_opposite_hand(uint16_t keycode) {
+    switch (keycode) {
+        case HR_D:
+        case HR_F:
+            return true;
+        default:
+            return false;
+    }
+}
+```
+
+### Behavior
+
+- **Same-hand key pressed**: Immediately interprets home run key as normal keypress (zero latency)
+- **Opposite-hand key pressed**: Uses normal timing detection (150-250ms)
+- **No same/opposite detection needed**: Use regular macros (`HOME_RUN_MT`, etc.) for pure timing-based behavior
+
+## Layer Switching
+
+In addition to modifiers, home run keys can activate layers. Two macros are available:
+
+### Momentary Layers (`HOME_RUN_ML`)
+
+Activates a layer only while the key is held:
+
+```c
+void on_home_run_action(uint16_t keycode, home_run_action_t action) {
+    switch (keycode) {
+        HOME_RUN_ML(HR_D, KC_D, _LOWER)
+        HOME_RUN_ML(HR_F, KC_F, _RAISE)
+    }
+}
+```
+
+Behavior:
+- **Tap**: Sends the key normally (e.g., `D` or `F`)
+- **Hold**: Layer is active while held, deactivates immediately on release
+
+### One-Shot Layers (`HOME_RUN_OSL`)
+
+Activates a layer with "sticky" behavior:
+
+```c
+void on_home_run_action(uint16_t keycode, home_run_action_t action) {
+    switch (keycode) {
+        HOME_RUN_OSL(HR_D, KC_D, _LOWER)
+        HOME_RUN_OSL(HR_F, KC_F, _RAISE)
+    }
+}
+```
+
+Behavior:
+- **Tap**: Sends the key normally (e.g., `D` or `F`)
+- **Hold briefly then release**: Layer activates for the next keypress only, then deactivates
+- **Hold and press other keys**: Layer stays active as long as the home run key is held
+
+Use `HOME_RUN_ML` for standard momentary layers, or `HOME_RUN_OSL` when you want the convenience of "sticky" layer activation for single keypresses.
+
 ## Advanced Usage
 
 For custom behavior, you can implement the action callback manually instead of using the `HOME_RUN_MT` macro:

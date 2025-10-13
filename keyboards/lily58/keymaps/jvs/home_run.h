@@ -56,6 +56,8 @@ typedef struct {
     uint16_t                    press_time;        // When the key was pressed
     home_run_state_t           state;             // Current state
     bool                       active;            // Is this slot active?
+    keypos_t                   home_key;           // The home-run key's position
+    bool                       requires_opposite_hand; // Only trigger as modifier for opposite hand
 
     // Track other key presses for overlap detection
     bool                       other_key_pressed;  // Another key was pressed
@@ -84,6 +86,10 @@ typedef enum {
 // User callback - implement this in your keymap
 void on_home_run_action(uint16_t keycode, home_run_action_t action);
 
+// Optional user callback - implement this to enable opposite-hand detection
+// Return true if this keycode should only trigger as modifier for opposite-hand keys
+__attribute__((weak)) bool home_run_requires_opposite_hand(uint16_t keycode);
+
 /* ************************************* *
  *         INTERNAL STATE                *
  * ************************************* */
@@ -93,6 +99,13 @@ static home_run_tracked_key_t home_run_tracked[HOME_RUN_MAX_ACTIVE];
 /* ************************************* *
  *         HELPER FUNCTIONS              *
  * ************************************* */
+
+// Check if two keys are on the same hand (for split keyboards)
+static bool same_hand(keypos_t key1, keypos_t key2) {
+    // For split keyboards, rows are typically divided between halves
+    // Keys on the same half will be on the same side of MATRIX_ROWS/2
+    return (key1.row < MATRIX_ROWS / 2) == (key2.row < MATRIX_ROWS / 2);
+}
 
 // Find a tracked key by keycode
 static home_run_tracked_key_t* home_run_find_tracked(uint16_t keycode) {
@@ -254,6 +267,24 @@ bool process_home_run(uint16_t keycode, keyrecord_t* record) {
 
         // Track other key presses for overlap detection
         if (record->event.pressed) {
+            // Check for same-hand roll - if this key requires opposite hand and we pressed same hand, resolve as normal key
+            if (tracking_unknown->requires_opposite_hand && same_hand(tracking_unknown->home_key, record->event.key)) {
+                // Immediately resolve as normal key
+                tracking_unknown->state = HOME_RUN_STATE_NORMAL;
+
+                // Flush buffer (normal tap)
+                home_run_buffer_flush(tracking_unknown);
+
+                // Call user's tap action
+                on_home_run_action(tracking_unknown->keycode, HOME_RUN_ACTION_TAP);
+
+                // Clean up
+                home_run_clear_tracked(tracking_unknown);
+
+                // Don't buffer this event, let it process normally
+                return true;
+            }
+
             if (!tracking_unknown->other_key_pressed) {
                 tracking_unknown->other_key_pressed = true;
                 tracking_unknown->other_keycode = keycode;
@@ -289,6 +320,8 @@ bool process_home_run(uint16_t keycode, keyrecord_t* record) {
             slot->other_key_pressed = false;
             slot->other_key_released = false;
             slot->replaying = false;
+            slot->home_key = record->event.key;
+            slot->requires_opposite_hand = home_run_requires_opposite_hand && home_run_requires_opposite_hand(keycode);
         }
 
         return false; // Handled
@@ -318,6 +351,66 @@ bool process_home_run(uint16_t keycode, keyrecord_t* record) {
         }                                                   \
         break;                                              \
     }
+
+// Helper macro to define a home-run one-shot layer key
+// Usage: HOME_RUN_OSL(keycode, tap_key, layer)
+// When tapped: sends tap_key normally
+// When held: activates one-shot layer (stays active for one key, or until released if held)
+#define HOME_RUN_OSL(hr_keycode, tap_key, layer)           \
+    case hr_keycode: {                                      \
+        switch (action) {                                   \
+            case HOME_RUN_ACTION_TAP:                       \
+                tap_code16(tap_key);                        \
+                break;                                      \
+            case HOME_RUN_ACTION_HOLD:                      \
+                set_oneshot_layer(layer, ONESHOT_START);    \
+                break;                                      \
+            case HOME_RUN_ACTION_RELEASE:                   \
+                reset_oneshot_layer();                      \
+                break;                                      \
+        }                                                   \
+        break;                                              \
+    }
+
+// Helper macro to define a home-run momentary layer key
+// Usage: HOME_RUN_ML(keycode, tap_key, layer)
+// When tapped: sends tap_key normally
+// When held: activates layer (deactivates immediately on release)
+#define HOME_RUN_ML(hr_keycode, tap_key, layer)            \
+    case hr_keycode: {                                      \
+        switch (action) {                                   \
+            case HOME_RUN_ACTION_TAP:                       \
+                tap_code16(tap_key);                        \
+                break;                                      \
+            case HOME_RUN_ACTION_HOLD:                      \
+                layer_on(layer);                            \
+                break;                                      \
+            case HOME_RUN_ACTION_RELEASE:                   \
+                layer_off(layer);                           \
+                break;                                      \
+        }                                                   \
+        break;                                              \
+    }
+
+/* ************************************* *
+ *    OPPOSITE-HAND DETECTION MACROS     *
+ * ************************************* */
+
+// These macros are identical to their non-OPPOSITE counterparts in functionality.
+// Use them to document that a key should require opposite-hand activation.
+// You must implement home_run_requires_opposite_hand() to return true for these keycodes.
+
+// Opposite-hand mod-tap: only triggers as modifier for opposite-hand keys
+// Usage: HOME_RUN_OPPOSITE_MT(keycode, tap_key, mod)
+#define HOME_RUN_OPPOSITE_MT(hr_keycode, tap_key, mod) HOME_RUN_MT(hr_keycode, tap_key, mod)
+
+// Opposite-hand one-shot layer: only triggers as layer for opposite-hand keys
+// Usage: HOME_RUN_OPPOSITE_OSL(keycode, tap_key, layer)
+#define HOME_RUN_OPPOSITE_OSL(hr_keycode, tap_key, layer) HOME_RUN_OSL(hr_keycode, tap_key, layer)
+
+// Opposite-hand momentary layer: only triggers as layer for opposite-hand keys
+// Usage: HOME_RUN_OPPOSITE_ML(keycode, tap_key, layer)
+#define HOME_RUN_OPPOSITE_ML(hr_keycode, tap_key, layer) HOME_RUN_ML(hr_keycode, tap_key, layer)
 
 /* ************************************* *
  *          USAGE INSTRUCTIONS           *
