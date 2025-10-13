@@ -50,7 +50,7 @@
 #define SMTD_GLOBAL_RELEASE_TERM 10
 
 // Combo configuration
-#define COMBO_COUNT 4
+#define COMBO_COUNT 7
 #define COMBO_TERM 50
 
 // OLED timeout (in milliseconds) - 10 seconds for testing

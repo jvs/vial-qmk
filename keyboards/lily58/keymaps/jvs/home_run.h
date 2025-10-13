@@ -292,12 +292,10 @@ bool process_home_run(uint16_t keycode, keyrecord_t* record) {
     }
 
     // Check if any home-run key is being tracked (we may need to buffer this event)
-    bool any_tracking = false;
     home_run_tracked_key_t* tracking_unknown = NULL;
 
     for (uint8_t i = 0; i < HOME_RUN_MAX_ACTIVE; i++) {
         if (home_run_tracked[i].active) {
-            any_tracking = true;
             if (home_run_tracked[i].state == HOME_RUN_STATE_UNKNOWN) {
                 tracking_unknown = &home_run_tracked[i];
                 break;
