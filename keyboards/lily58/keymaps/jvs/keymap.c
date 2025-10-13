@@ -153,9 +153,9 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 ),
 
 [_RAISE] = LAYOUT(
-  XX,      XX,      XX,      KC_PGUP, KC_PGDN, XX,                            XX,      XX,      XX,      XX,      XX,      XX,
-  XX,      XX,      XX,      KC_HOME, KC_END,  A(KC_T),                       XX,      XX,      XX,      XX,      XX,      XX,
-  XX,      XX,      XX,      G(S(KC_TAB)), G(KC_TAB), XX,                     OSM(MOD_LALT), OSM(MOD_LCTL), OSM(MOD_RSFT), OSM(MOD_RGUI), XX, XX,
+  XX,      XX,      XX,      XX,      XX,      XX,                            XX,      XX,      XX,      XX,      XX,      XX,
+  XX,      KC_LBRC, KC_RBRC, KC_LCBR, KC_RCBR, A(KC_T),                       XX,      XX,      XX,      XX,      XX,      XX,
+  XX,      KC_PLUS, KC_EQL,  G(S(KC_TAB)), G(KC_TAB), XX,                     OSM(MOD_LALT), OSM(MOD_LCTL), OSM(MOD_RSFT), OSM(MOD_RGUI), XX, XX,
   XX,      XX,      OS_UNDO, OS_CUT,  OS_COPY, OS_PASTE, XX,      XX,        XX,      XX,      XX,      XX,      XX,      XX,
                              XX,      XX,      XX,      XX,            XX,      XX,      __,      XX
 ),
