@@ -49,6 +49,7 @@ typedef struct {
     uint16_t keycode;
     bool     pressed;
     keypos_t key;
+    uint16_t timestamp;  // When this event occurred (from timer_read())
 } home_run_buffered_event_t;
 
 typedef struct {
@@ -136,48 +137,232 @@ static home_run_tracked_key_t* home_run_get_inactive_slot(void) {
 }
 
 // Add an event to the buffer
-static void home_run_buffer_add(home_run_tracked_key_t* tracked, uint16_t keycode, bool pressed, keypos_t key) {
+static void home_run_buffer_add(home_run_tracked_key_t* tracked, uint16_t keycode, bool pressed, keypos_t key, uint16_t timestamp) {
     if (tracked->buffer_count < HOME_RUN_BUFFER_SIZE) {
         tracked->buffer[tracked->buffer_count].keycode = keycode;
         tracked->buffer[tracked->buffer_count].pressed = pressed;
         tracked->buffer[tracked->buffer_count].key = key;
+        tracked->buffer[tracked->buffer_count].timestamp = timestamp;
         tracked->buffer_count++;
     }
 }
 
-// Replay buffered events with proper interpretation of home-run key
-static void home_run_buffer_flush(home_run_tracked_key_t* tracked) {
-    replaying_buffer = true;
-
-    for (uint8_t i = 0; i < tracked->buffer_count; i++) {
-        home_run_buffered_event_t* event = &tracked->buffer[i];
-
-        // Check if this is the home-run key itself
-        if (event->keycode == tracked->keycode) {
-            // Apply resolved interpretation
-            if (tracked->state == HOME_RUN_STATE_NORMAL) {
-                // Normal tap: emit the key on press, skip release
-                if (event->pressed) {
-                    on_home_run_action(tracked->keycode, HOME_RUN_ACTION_TAP);
-                }
-                // Skip release event (tap_code16 already did press+release)
-            } else if (tracked->state == HOME_RUN_STATE_MODIFIER) {
-                // Modifier: register on press, unregister on release
-                if (event->pressed) {
-                    on_home_run_action(tracked->keycode, HOME_RUN_ACTION_HOLD);
-                } else {
-                    on_home_run_action(tracked->keycode, HOME_RUN_ACTION_RELEASE);
-                }
-            }
-        } else {
-            // Regular key: replay the event normally
-            keyevent_t ke = MAKE_KEYEVENT(event->key.row, event->key.col, event->pressed);
-            keyrecord_t record = {.event = ke};
-            process_record(&record);
+// Helper: Try to resolve a home-run key from buffered events
+// Returns the resolved state, or UNKNOWN if we can't determine yet
+// start_idx: index of the home-run key press in the buffer
+// hr_keycode: the home-run keycode to resolve
+// hr_timestamp: when the home-run key was pressed
+// requires_opposite: does this key require opposite-hand detection?
+// hr_key: the home-run key's position
+static home_run_state_t home_run_try_resolve_from_buffer(
+    home_run_buffered_event_t* buffer,
+    uint8_t buffer_count,
+    uint8_t start_idx,
+    uint16_t hr_keycode,
+    uint16_t hr_timestamp,
+    bool requires_opposite,
+    keypos_t hr_key
+) {
+    // Look for release of this home-run key
+    uint8_t release_idx = 0;
+    bool found_release = false;
+    for (uint8_t i = start_idx + 1; i < buffer_count; i++) {
+        if (buffer[i].keycode == hr_keycode && !buffer[i].pressed) {
+            release_idx = i;
+            found_release = true;
+            break;
         }
     }
 
+    if (found_release) {
+        // We have a complete press/release cycle in the buffer
+        uint16_t elapsed = timer_elapsed_safe(hr_timestamp, buffer[release_idx].timestamp);
+
+        // Check for same-hand roll (opposite-hand detection)
+        if (requires_opposite) {
+            for (uint8_t i = start_idx + 1; i < release_idx; i++) {
+                if (buffer[i].pressed && buffer[i].keycode != hr_keycode) {
+                    if (same_hand(hr_key, buffer[i].key)) {
+                        return HOME_RUN_STATE_NORMAL; // Same-hand roll
+                    }
+                }
+            }
+        }
+
+        // Check timing: if released quickly, it's a tap
+        if (elapsed <= HOME_RUN_FULL_OVERLAP_LIMIT) {
+            return HOME_RUN_STATE_NORMAL;
+        }
+
+        // Check for full overlap
+        bool other_pressed = false;
+        bool other_released = false;
+        for (uint8_t i = start_idx + 1; i < release_idx; i++) {
+            if (buffer[i].keycode != hr_keycode) {
+                if (buffer[i].pressed) other_pressed = true;
+                if (!buffer[i].pressed) other_released = true;
+            }
+        }
+
+        if (elapsed > HOME_RUN_FULL_OVERLAP_LIMIT && other_pressed && other_released) {
+            return HOME_RUN_STATE_MODIFIER;
+        }
+
+        if (elapsed > HOME_RUN_PARTIAL_OVERLAP_LIMIT) {
+            return HOME_RUN_STATE_MODIFIER;
+        }
+
+        // Default: normal tap
+        return HOME_RUN_STATE_NORMAL;
+    }
+
+    // No release yet - can we determine from current time?
+    uint16_t elapsed = timer_elapsed(hr_timestamp);
+    if (elapsed > HOME_RUN_PARTIAL_OVERLAP_LIMIT) {
+        return HOME_RUN_STATE_MODIFIER;
+    }
+
+    return HOME_RUN_STATE_UNKNOWN; // Still don't know
+}
+
+// Helper: Calculate elapsed time between two timestamps, handling timer wraparound
+static uint16_t timer_elapsed_safe(uint16_t start, uint16_t end) {
+    if (end >= start) {
+        return end - start;
+    } else {
+        // Timer wrapped around
+        return (UINT16_MAX - start) + end + 1;
+    }
+}
+
+// Replay buffered events with iterative home-run key resolution
+// Returns the number of events consumed from the buffer
+static uint8_t home_run_buffer_flush_recursive(home_run_tracked_key_t* tracked, uint8_t start_idx) {
+    uint8_t i = start_idx;
+
+    while (i < tracked->buffer_count) {
+        home_run_buffered_event_t* event = &tracked->buffer[i];
+
+        // Save event data in local variables (buffer may be modified by recursive calls)
+        uint16_t event_keycode = event->keycode;
+        bool event_pressed = event->pressed;
+        keypos_t event_key = event->key;
+        uint16_t event_timestamp = event->timestamp;
+
+        // Check if this is a home-run key press
+        if (event_pressed && event_keycode >= HOME_RUN_KEYCODES_BEGIN && event_keycode <= HOME_RUN_KEYCODES_END) {
+            // Try to resolve this home-run key from the buffer
+            bool requires_opposite = home_run_requires_opposite_hand && home_run_requires_opposite_hand(event_keycode);
+            home_run_state_t resolved_state = home_run_try_resolve_from_buffer(
+                tracked->buffer,
+                tracked->buffer_count,
+                i,
+                event_keycode,
+                event_timestamp,
+                requires_opposite,
+                event_key
+            );
+
+            if (resolved_state == HOME_RUN_STATE_UNKNOWN) {
+                // Can't resolve yet - need to resume tracking this key
+                // Update tracked state to track this new home-run key
+                tracked->keycode = event_keycode;
+                tracked->press_time = event_timestamp;
+                tracked->home_key = event_key;
+                tracked->requires_opposite_hand = requires_opposite;
+                tracked->state = HOME_RUN_STATE_UNKNOWN;
+
+                // Remove consumed events from buffer (0 to i-1)
+                uint8_t remaining = tracked->buffer_count - i;
+                for (uint8_t j = 0; j < remaining; j++) {
+                    tracked->buffer[j] = tracked->buffer[i + j];
+                }
+                tracked->buffer_count = remaining;
+
+                // Reset other_key tracking
+                tracked->other_key_pressed = false;
+                tracked->other_key_released = false;
+
+                return i; // Return number of events consumed
+            }
+
+            // Resolved! Emit based on interpretation
+            if (resolved_state == HOME_RUN_STATE_NORMAL) {
+                // Emit as tap
+                on_home_run_action(event_keycode, HOME_RUN_ACTION_TAP);
+                i++; // Skip the press event
+
+                // Skip all events until the release of this home-run key
+                while (i < tracked->buffer_count) {
+                    if (tracked->buffer[i].keycode == event_keycode && !tracked->buffer[i].pressed) {
+                        i++; // Skip the release
+                        break;
+                    }
+
+                    // Replay intermediate events (but check for nested home-run keys recursively)
+                    if (tracked->buffer[i].pressed &&
+                        tracked->buffer[i].keycode >= HOME_RUN_KEYCODES_BEGIN &&
+                        tracked->buffer[i].keycode <= HOME_RUN_KEYCODES_END) {
+                        // Nested home-run key - handle recursively
+                        // This shouldn't normally happen but handle it gracefully
+                        uint8_t consumed = home_run_buffer_flush_recursive(tracked, i);
+                        i += consumed;
+                    } else {
+                        // Regular key
+                        keyevent_t ke = MAKE_KEYEVENT(tracked->buffer[i].key.row, tracked->buffer[i].key.col, tracked->buffer[i].pressed);
+                        keyrecord_t record = {.event = ke};
+                        process_record(&record);
+                        i++;
+                    }
+                }
+            } else { // HOME_RUN_STATE_MODIFIER
+                // Emit as modifier
+                on_home_run_action(event_keycode, HOME_RUN_ACTION_HOLD);
+                i++; // Skip the press event
+
+                // Replay all events until release, but treat nested home-run keys as normal
+                while (i < tracked->buffer_count) {
+                    if (tracked->buffer[i].keycode == event_keycode && !tracked->buffer[i].pressed) {
+                        // Release of the modifier
+                        on_home_run_action(event_keycode, HOME_RUN_ACTION_RELEASE);
+                        i++; // Skip the release
+                        break;
+                    }
+
+                    // Replay event (nested home-run keys treated as normal)
+                    if (tracked->buffer[i].keycode >= HOME_RUN_KEYCODES_BEGIN &&
+                        tracked->buffer[i].keycode <= HOME_RUN_KEYCODES_END) {
+                        // Nested home-run key - treat as normal tap
+                        if (tracked->buffer[i].pressed) {
+                            on_home_run_action(tracked->buffer[i].keycode, HOME_RUN_ACTION_TAP);
+                        }
+                        // Skip release events
+                    } else {
+                        keyevent_t ke = MAKE_KEYEVENT(tracked->buffer[i].key.row, tracked->buffer[i].key.col, tracked->buffer[i].pressed);
+                        keyrecord_t record = {.event = ke};
+                        process_record(&record);
+                    }
+                    i++;
+                }
+            }
+        } else {
+            // Regular key event
+            keyevent_t ke = MAKE_KEYEVENT(event_key.row, event_key.col, event_pressed);
+            keyrecord_t record = {.event = ke};
+            process_record(&record);
+            i++;
+        }
+    }
+
+    // Consumed all events
     tracked->buffer_count = 0;
+    return i - start_idx;
+}
+
+// Main flush function
+static void home_run_buffer_flush(home_run_tracked_key_t* tracked) {
+    replaying_buffer = true;
+    home_run_buffer_flush_recursive(tracked, 0);
     replaying_buffer = false;
 }
 
@@ -274,9 +459,10 @@ bool process_home_run(uint16_t keycode, keyrecord_t* record) {
         // Start tracking this home-run key
         home_run_tracked_key_t* slot = home_run_get_inactive_slot();
         if (slot) {
+            uint16_t now = timer_read();
             slot->active = true;
             slot->keycode = keycode;
-            slot->press_time = timer_read();
+            slot->press_time = now;
             slot->state = HOME_RUN_STATE_UNKNOWN;
             slot->buffer_count = 0;
             slot->other_key_pressed = false;
@@ -285,7 +471,7 @@ bool process_home_run(uint16_t keycode, keyrecord_t* record) {
             slot->requires_opposite_hand = home_run_requires_opposite_hand && home_run_requires_opposite_hand(keycode);
 
             // Buffer the home-run key press itself
-            home_run_buffer_add(slot, keycode, record->event.pressed, record->event.key);
+            home_run_buffer_add(slot, keycode, record->event.pressed, record->event.key, now);
         }
 
         return false; // Handled, don't process normally
@@ -299,7 +485,7 @@ bool process_home_run(uint16_t keycode, keyrecord_t* record) {
             tracked->state = HOME_RUN_STATE_NORMAL;
 
             // Buffer the release
-            home_run_buffer_add(tracked, keycode, record->event.pressed, record->event.key);
+            home_run_buffer_add(tracked, keycode, record->event.pressed, record->event.key, timer_read());
 
             // Flush buffer with appropriate interpretation
             home_run_finalize_state(tracked);
@@ -332,7 +518,7 @@ bool process_home_run(uint16_t keycode, keyrecord_t* record) {
 
     if (tracking_unknown) {
         // Buffer this event (state still unknown)
-        home_run_buffer_add(tracking_unknown, keycode, record->event.pressed, record->event.key);
+        home_run_buffer_add(tracking_unknown, keycode, record->event.pressed, record->event.key, timer_read());
 
         // Track other key presses for overlap detection
         if (record->event.pressed) {
