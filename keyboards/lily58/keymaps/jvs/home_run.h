@@ -92,7 +92,8 @@ __attribute__((weak)) bool home_run_requires_opposite_hand(uint16_t keycode);
  *         INTERNAL STATE                *
  * ************************************* */
 
-static home_run_tracked_key_t home_run_tracked[HOME_RUN_MAX_ACTIVE];
+// Single tracker - we only track one home-run key at a time
+static home_run_tracked_key_t home_run_tracked;
 
 // Global flag to prevent recursive processing during buffer replay
 static bool replaying_buffer = false;
@@ -114,26 +115,6 @@ static bool same_hand(keypos_t key1, keypos_t key2) {
     // For split keyboards, rows are typically divided between halves
     // Keys on the same half will be on the same side of MATRIX_ROWS/2
     return (key1.row < MATRIX_ROWS / 2) == (key2.row < MATRIX_ROWS / 2);
-}
-
-// Find a tracked key by keycode
-static home_run_tracked_key_t* home_run_find_tracked(uint16_t keycode) {
-    for (uint8_t i = 0; i < HOME_RUN_MAX_ACTIVE; i++) {
-        if (home_run_tracked[i].active && home_run_tracked[i].keycode == keycode) {
-            return &home_run_tracked[i];
-        }
-    }
-    return NULL;
-}
-
-// Find an inactive slot for tracking a new key
-static home_run_tracked_key_t* home_run_get_inactive_slot(void) {
-    for (uint8_t i = 0; i < HOME_RUN_MAX_ACTIVE; i++) {
-        if (!home_run_tracked[i].active) {
-            return &home_run_tracked[i];
-        }
-    }
-    return NULL;
 }
 
 // Add an event to the buffer
@@ -454,105 +435,74 @@ bool process_home_run(uint16_t keycode, keyrecord_t* record) {
         return true;
     }
 
-    // Check if this is a new home-run key press
-    if (record->event.pressed && keycode >= HOME_RUN_KEYCODES_BEGIN && keycode <= HOME_RUN_KEYCODES_END) {
-        // Start tracking this home-run key
-        home_run_tracked_key_t* slot = home_run_get_inactive_slot();
-        if (slot) {
-            uint16_t now = timer_read();
-            slot->active = true;
-            slot->keycode = keycode;
-            slot->press_time = now;
-            slot->state = HOME_RUN_STATE_UNKNOWN;
-            slot->buffer_count = 0;
-            slot->other_key_pressed = false;
-            slot->other_key_released = false;
-            slot->home_key = record->event.key;
-            slot->requires_opposite_hand = home_run_requires_opposite_hand && home_run_requires_opposite_hand(keycode);
+    // If we're already tracking something, handle it
+    if (home_run_tracked.active) {
+        // Check if this is the release of the tracked home-run key
+        if (!record->event.pressed && keycode == home_run_tracked.keycode) {
+            if (home_run_tracked.state == HOME_RUN_STATE_UNKNOWN) {
+                // Released before any decision was made - it's a normal tap
+                home_run_tracked.state = HOME_RUN_STATE_NORMAL;
 
-            // Buffer the home-run key press itself
-            home_run_buffer_add(slot, keycode, record->event.pressed, record->event.key, now);
-        }
+                // Buffer the release
+                home_run_buffer_add(&home_run_tracked, keycode, record->event.pressed, record->event.key, timer_read());
 
-        return false; // Handled, don't process normally
-    }
+                // Flush buffer with appropriate interpretation
+                home_run_finalize_state(&home_run_tracked);
 
-    // Check if this is a tracked home-run key release
-    home_run_tracked_key_t* tracked = home_run_find_tracked(keycode);
-    if (tracked && !record->event.pressed) {
-        if (tracked->state == HOME_RUN_STATE_UNKNOWN) {
-            // Released before any decision was made - it's a normal tap
-            tracked->state = HOME_RUN_STATE_NORMAL;
+                // Clean up
+                home_run_clear_tracked(&home_run_tracked);
+            } else if (home_run_tracked.state == HOME_RUN_STATE_MODIFIER) {
+                // Already determined as modifier, just release it
+                on_home_run_action(home_run_tracked.keycode, HOME_RUN_ACTION_RELEASE);
 
-            // Buffer the release
-            home_run_buffer_add(tracked, keycode, record->event.pressed, record->event.key, timer_read());
-
-            // Flush buffer with appropriate interpretation
-            home_run_finalize_state(tracked);
-        } else if (tracked->state == HOME_RUN_STATE_MODIFIER) {
-            // Already determined as modifier, just release it
-            on_home_run_action(tracked->keycode, HOME_RUN_ACTION_RELEASE);
-        }
-
-        // Clean up
-        home_run_clear_tracked(tracked);
-
-        return false; // Handled
-    }
-
-    // Check if any home-run key is being tracked
-    home_run_tracked_key_t* tracking_unknown = NULL;
-    home_run_tracked_key_t* tracking_modifier = NULL;
-
-    for (uint8_t i = 0; i < HOME_RUN_MAX_ACTIVE; i++) {
-        if (home_run_tracked[i].active) {
-            if (home_run_tracked[i].state == HOME_RUN_STATE_UNKNOWN) {
-                tracking_unknown = &home_run_tracked[i];
-                break;
-            } else if (home_run_tracked[i].state == HOME_RUN_STATE_MODIFIER) {
-                tracking_modifier = &home_run_tracked[i];
-                // Don't break - still check for unknown states which take priority
+                // Clean up
+                home_run_clear_tracked(&home_run_tracked);
             }
-        }
-    }
 
-    if (tracking_unknown) {
-        // Buffer this event (state still unknown)
-        home_run_buffer_add(tracking_unknown, keycode, record->event.pressed, record->event.key, timer_read());
+            return false; // Handled
+        }
+
+        // If state is already determined as MODIFIER, let events process normally
+        if (home_run_tracked.state == HOME_RUN_STATE_MODIFIER) {
+            return true; // Let the event process with modifier active
+        }
+
+        // State is UNKNOWN - buffer this event (including other home-run keys!)
+        home_run_buffer_add(&home_run_tracked, keycode, record->event.pressed, record->event.key, timer_read());
 
         // Track other key presses for overlap detection
         if (record->event.pressed) {
             // Check for same-hand roll
-            if (tracking_unknown->requires_opposite_hand && same_hand(tracking_unknown->home_key, record->event.key)) {
+            if (home_run_tracked.requires_opposite_hand && same_hand(home_run_tracked.home_key, record->event.key)) {
                 // Immediately resolve as normal key
-                tracking_unknown->state = HOME_RUN_STATE_NORMAL;
-                home_run_finalize_state(tracking_unknown);
-                home_run_clear_tracked(tracking_unknown);
+                home_run_tracked.state = HOME_RUN_STATE_NORMAL;
+                home_run_finalize_state(&home_run_tracked);
+                home_run_clear_tracked(&home_run_tracked);
                 return false; // Event was buffered and flushed
             }
 
-            if (!tracking_unknown->other_key_pressed) {
-                tracking_unknown->other_key_pressed = true;
-                tracking_unknown->other_keycode = keycode;
-                tracking_unknown->other_key = record->event.key;
+            if (!home_run_tracked.other_key_pressed) {
+                home_run_tracked.other_key_pressed = true;
+                home_run_tracked.other_keycode = keycode;
+                home_run_tracked.other_key = record->event.key;
             }
         } else {
             // Key released - check if it's the other key we're tracking
-            if (tracking_unknown->other_key_pressed &&
-                tracking_unknown->other_key.row == record->event.key.row &&
-                tracking_unknown->other_key.col == record->event.key.col) {
-                tracking_unknown->other_key_released = true;
+            if (home_run_tracked.other_key_pressed &&
+                home_run_tracked.other_key.row == record->event.key.row &&
+                home_run_tracked.other_key.col == record->event.key.col) {
+                home_run_tracked.other_key_released = true;
             }
         }
 
         // Check if we can determine the state now
-        if (home_run_check_state(tracking_unknown)) {
-            home_run_finalize_state(tracking_unknown);
+        if (home_run_check_state(&home_run_tracked)) {
+            home_run_finalize_state(&home_run_tracked);
 
             // If it was determined as MODIFIER, keep tracking (don't clear)
             // so we can properly release it later
-            if (tracking_unknown->state == HOME_RUN_STATE_NORMAL) {
-                home_run_clear_tracked(tracking_unknown);
+            if (home_run_tracked.state == HOME_RUN_STATE_NORMAL) {
+                home_run_clear_tracked(&home_run_tracked);
             }
             // If MODIFIER, tracking continues until key is released
         }
@@ -560,9 +510,24 @@ bool process_home_run(uint16_t keycode, keyrecord_t* record) {
         return false; // Event is buffered, don't process normally
     }
 
-    // If we're tracking a modifier (already determined), let events process normally
-    if (tracking_modifier) {
-        return true; // Let the event process with modifier active
+    // Not currently tracking anything - check if this is a new home-run key press
+    if (record->event.pressed && keycode >= HOME_RUN_KEYCODES_BEGIN && keycode <= HOME_RUN_KEYCODES_END) {
+        // Start tracking this home-run key
+        uint16_t now = timer_read();
+        home_run_tracked.active = true;
+        home_run_tracked.keycode = keycode;
+        home_run_tracked.press_time = now;
+        home_run_tracked.state = HOME_RUN_STATE_UNKNOWN;
+        home_run_tracked.buffer_count = 0;
+        home_run_tracked.other_key_pressed = false;
+        home_run_tracked.other_key_released = false;
+        home_run_tracked.home_key = record->event.key;
+        home_run_tracked.requires_opposite_hand = home_run_requires_opposite_hand && home_run_requires_opposite_hand(keycode);
+
+        // Buffer the home-run key press itself
+        home_run_buffer_add(&home_run_tracked, keycode, record->event.pressed, record->event.key, now);
+
+        return false; // Handled, don't process normally
     }
 
     return true; // Not a home-run event, continue normal processing
