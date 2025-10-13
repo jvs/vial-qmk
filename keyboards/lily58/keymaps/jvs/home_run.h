@@ -294,16 +294,19 @@ bool process_home_run(uint16_t keycode, keyrecord_t* record) {
     // Check if this is a tracked home-run key release
     home_run_tracked_key_t* tracked = home_run_find_tracked(keycode);
     if (tracked && !record->event.pressed) {
-        // Buffer the home-run key release
-        home_run_buffer_add(tracked, keycode, record->event.pressed, record->event.key);
-
         if (tracked->state == HOME_RUN_STATE_UNKNOWN) {
             // Released before any decision was made - it's a normal tap
             tracked->state = HOME_RUN_STATE_NORMAL;
-        }
 
-        // Flush buffer with appropriate interpretation
-        home_run_finalize_state(tracked);
+            // Buffer the release
+            home_run_buffer_add(tracked, keycode, record->event.pressed, record->event.key);
+
+            // Flush buffer with appropriate interpretation
+            home_run_finalize_state(tracked);
+        } else if (tracked->state == HOME_RUN_STATE_MODIFIER) {
+            // Already determined as modifier, just release it
+            on_home_run_action(tracked->keycode, HOME_RUN_ACTION_RELEASE);
+        }
 
         // Clean up
         home_run_clear_tracked(tracked);
@@ -311,18 +314,24 @@ bool process_home_run(uint16_t keycode, keyrecord_t* record) {
         return false; // Handled
     }
 
-    // Check if any home-run key is being tracked in unknown state
+    // Check if any home-run key is being tracked
     home_run_tracked_key_t* tracking_unknown = NULL;
+    home_run_tracked_key_t* tracking_modifier = NULL;
 
     for (uint8_t i = 0; i < HOME_RUN_MAX_ACTIVE; i++) {
-        if (home_run_tracked[i].active && home_run_tracked[i].state == HOME_RUN_STATE_UNKNOWN) {
-            tracking_unknown = &home_run_tracked[i];
-            break;
+        if (home_run_tracked[i].active) {
+            if (home_run_tracked[i].state == HOME_RUN_STATE_UNKNOWN) {
+                tracking_unknown = &home_run_tracked[i];
+                break;
+            } else if (home_run_tracked[i].state == HOME_RUN_STATE_MODIFIER) {
+                tracking_modifier = &home_run_tracked[i];
+                // Don't break - still check for unknown states which take priority
+            }
         }
     }
 
     if (tracking_unknown) {
-        // Buffer this event
+        // Buffer this event (state still unknown)
         home_run_buffer_add(tracking_unknown, keycode, record->event.pressed, record->event.key);
 
         // Track other key presses for overlap detection
@@ -353,10 +362,21 @@ bool process_home_run(uint16_t keycode, keyrecord_t* record) {
         // Check if we can determine the state now
         if (home_run_check_state(tracking_unknown)) {
             home_run_finalize_state(tracking_unknown);
-            home_run_clear_tracked(tracking_unknown);
+
+            // If it was determined as MODIFIER, keep tracking (don't clear)
+            // so we can properly release it later
+            if (tracking_unknown->state == HOME_RUN_STATE_NORMAL) {
+                home_run_clear_tracked(tracking_unknown);
+            }
+            // If MODIFIER, tracking continues until key is released
         }
 
         return false; // Event is buffered, don't process normally
+    }
+
+    // If we're tracking a modifier (already determined), let events process normally
+    if (tracking_modifier) {
+        return true; // Let the event process with modifier active
     }
 
     return true; // Not a home-run event, continue normal processing
