@@ -270,11 +270,11 @@ bool process_home_run(uint16_t keycode, keyrecord_t* record) {
                 // Case 1: Released before limits - it's a normal key
                 tracked->state = HOME_RUN_STATE_NORMAL;
 
-                // Flush buffer (normal tap)
-                home_run_buffer_flush(tracked);
-
-                // Call user's tap action
+                // Call user's tap action first (emit the home-run key)
                 on_home_run_action(tracked->keycode, HOME_RUN_ACTION_TAP);
+
+                // Then flush buffer (emit the buffered keys)
+                home_run_buffer_flush(tracked);
 
                 // Clean up
                 home_run_clear_tracked(tracked);
