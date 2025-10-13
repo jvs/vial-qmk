@@ -145,53 +145,35 @@ static void home_run_buffer_add(home_run_tracked_key_t* tracked, uint16_t keycod
     }
 }
 
-// Replay buffered events as normal keys (all events including home-run key)
-static void home_run_buffer_flush_as_normal(home_run_tracked_key_t* tracked) {
+// Replay buffered events with proper interpretation of home-run key
+static void home_run_buffer_flush(home_run_tracked_key_t* tracked) {
     replaying_buffer = true;
 
     for (uint8_t i = 0; i < tracked->buffer_count; i++) {
         home_run_buffered_event_t* event = &tracked->buffer[i];
 
-        keyevent_t ke = MAKE_KEYEVENT(event->key.row, event->key.col, event->pressed);
-        keyrecord_t record = {.event = ke};
-
-        process_record(&record);
-    }
-
-    tracked->buffer_count = 0;
-    replaying_buffer = false;
-}
-
-// Replay buffered events with home-run key acting as modifier
-static void home_run_buffer_flush_as_modifier(home_run_tracked_key_t* tracked) {
-    replaying_buffer = true;
-
-    // First pass: find home-run key press and activate modifier
-    for (uint8_t i = 0; i < tracked->buffer_count; i++) {
-        home_run_buffered_event_t* event = &tracked->buffer[i];
-        if (event->keycode == tracked->keycode && event->pressed) {
-            on_home_run_action(tracked->keycode, HOME_RUN_ACTION_HOLD);
-            break;
-        }
-    }
-
-    // Second pass: replay all non-home-run events
-    for (uint8_t i = 0; i < tracked->buffer_count; i++) {
-        home_run_buffered_event_t* event = &tracked->buffer[i];
-
-        if (event->keycode != tracked->keycode) {
+        // Check if this is the home-run key itself
+        if (event->keycode == tracked->keycode) {
+            // Apply resolved interpretation
+            if (tracked->state == HOME_RUN_STATE_NORMAL) {
+                // Normal tap: emit the key on press, skip release
+                if (event->pressed) {
+                    on_home_run_action(tracked->keycode, HOME_RUN_ACTION_TAP);
+                }
+                // Skip release event (tap_code16 already did press+release)
+            } else if (tracked->state == HOME_RUN_STATE_MODIFIER) {
+                // Modifier: register on press, unregister on release
+                if (event->pressed) {
+                    on_home_run_action(tracked->keycode, HOME_RUN_ACTION_HOLD);
+                } else {
+                    on_home_run_action(tracked->keycode, HOME_RUN_ACTION_RELEASE);
+                }
+            }
+        } else {
+            // Regular key: replay the event normally
             keyevent_t ke = MAKE_KEYEVENT(event->key.row, event->key.col, event->pressed);
             keyrecord_t record = {.event = ke};
             process_record(&record);
-        }
-    }
-
-    // Third pass: find home-run key release and deactivate modifier
-    for (uint8_t i = 0; i < tracked->buffer_count; i++) {
-        home_run_buffered_event_t* event = &tracked->buffer[i];
-        if (event->keycode == tracked->keycode && !event->pressed) {
-            on_home_run_action(tracked->keycode, HOME_RUN_ACTION_RELEASE);
-            break;
         }
     }
 
@@ -226,11 +208,8 @@ static bool home_run_check_state(home_run_tracked_key_t* tracked) {
 
 // Transition to a determined state and flush buffer
 static void home_run_finalize_state(home_run_tracked_key_t* tracked) {
-    if (tracked->state == HOME_RUN_STATE_MODIFIER) {
-        home_run_buffer_flush_as_modifier(tracked);
-    } else if (tracked->state == HOME_RUN_STATE_NORMAL) {
-        home_run_buffer_flush_as_normal(tracked);
-    }
+    // Flush buffer with the resolved interpretation
+    home_run_buffer_flush(tracked);
 }
 
 // Clear a tracked key
