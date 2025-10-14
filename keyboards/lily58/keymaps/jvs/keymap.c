@@ -208,21 +208,21 @@ static void toggle_os(void) {
 
 // Combos
 enum combo_events {
-    ER_ESC,
+    DF_ESC,
     ALT_ESC_WIN,
     UI_BSPC,      // Right hand: U+I for backspace
     OP_DEL,       // Right hand: O+P for delete
     MCOMM_ENT,    // Right hand: M+comma for enter
 };
 
-const uint16_t PROGMEM er_combo[] = {KC_E, KC_R, COMBO_END};
+const uint16_t PROGMEM df_combo[] = {HR_D, HR_F, COMBO_END};
 const uint16_t PROGMEM alt_esc_combo[] = {KC_LALT, KC_ESC, COMBO_END};
 const uint16_t PROGMEM ui_combo[] = {KC_U, KC_I, COMBO_END};
 const uint16_t PROGMEM op_combo[] = {KC_O, KC_P, COMBO_END};
 const uint16_t PROGMEM mcomm_combo[] = {HR_M, HR_COMM, COMBO_END};
 
 combo_t key_combos[COMBO_COUNT] = {
-    [ER_ESC] = COMBO(er_combo, KC_ESC),
+    [DF_ESC] = COMBO(df_combo, KC_ESC),
     [ALT_ESC_WIN] = COMBO(alt_esc_combo, WIN_SWITCH),
     [UI_BSPC] = COMBO(ui_combo, KC_BSPC),
     [OP_DEL] = COMBO(op_combo, KC_DEL),
