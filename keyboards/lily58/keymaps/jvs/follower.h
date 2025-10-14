@@ -138,7 +138,6 @@ bool follower_process(const follower_expansion_t* expansions, size_t num_expansi
     // Execute expansion
     const follower_expansion_t* exp = &expansions[best_match];
     size_t input_len = strlen(exp->input);
-    size_t output_len = strlen(exp->output);
 
     // Emit backspaces to delete input
     for (size_t i = 0; i < input_len; i++) {
