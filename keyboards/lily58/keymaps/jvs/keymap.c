@@ -311,6 +311,19 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
 // Home Run Modifiers configuration
 void on_home_run_action(uint16_t keycode, home_run_action_t action) {
+    // Track taps for follower system
+    if (action == HOME_RUN_TAP) {
+        switch (keycode) {
+            case HR_C: follower_track_tap(KC_C); break;
+            case HR_X: follower_track_tap(KC_X); break;
+            case HR_D: follower_track_tap(KC_D); break;
+            case HR_F: follower_track_tap(KC_F); break;
+            case HR_M: follower_track_tap(KC_M); break;
+            case HR_COMM: follower_track_tap(KC_COMM); break;
+            case HR_SCLN: follower_track_tap(KC_SCLN); break;
+        }
+    }
+
     switch (keycode) {
         HOME_RUN_OPPOSITE_MENU_ML(HR_C, KC_C, _COMPARE)
         HOME_RUN_OPPOSITE_MENU_ML(HR_X, KC_X, _MATH)
@@ -338,28 +351,14 @@ bool home_run_requires_opposite_hand(uint16_t keycode) {
     }
 }
 
-// Helper for follower to get tap keycode from home run keycodes
-static uint16_t get_home_run_tap_keycode(uint16_t keycode) {
-    switch (keycode) {
-        case HR_C: return KC_C;
-        case HR_X: return KC_X;
-        case HR_D: return KC_D;
-        case HR_F: return KC_F;
-        case HR_M: return KC_M;
-        case HR_COMM: return KC_COMM;
-        case HR_SCLN: return KC_SCLN;
-        default: return KC_NO;
-    }
-}
-
-// Implement follower_track_key with home run awareness
-void follower_track_key(uint16_t keycode, keyrecord_t* record) {
-    follower_track_key_impl(keycode, record, get_home_run_tap_keycode);
+// Helper for follower to check if keycode is a home run key
+static bool is_home_run_keycode(uint16_t keycode) {
+    return (keycode >= HOME_RUN_KEYCODES_BEGIN && keycode < HOME_RUN_KEYCODES_END);
 }
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-    // Track all keypresses for follower system
-    follower_track_key(keycode, record);
+    // Track all keypresses for follower system (home run keys tracked separately)
+    follower_track_key(keycode, record, is_home_run_keycode);
 
     if (!process_home_run(keycode, record)) {
         return false;

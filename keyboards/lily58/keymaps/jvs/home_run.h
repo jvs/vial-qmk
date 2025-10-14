@@ -245,22 +245,19 @@ static void home_run_buffer_flush(home_run_tracked_key_t* tracked) {
         }
 
         // Check if this is a nested home-run key
-        if (event->pressed && event->keycode >= HOME_RUN_KEYCODES_BEGIN && event->keycode <= HOME_RUN_KEYCODES_END) {
+        if (event->pressed && event->keycode > HOME_RUN_KEYCODES_BEGIN && event->keycode < HOME_RUN_KEYCODES_END) {
             // Nested home-run key behavior depends on parent state
             if (tracked->state == HOME_RUN_STATE_MODIFIER) {
-                // Parent is modifier: nested HR keys process as their tap behavior on the active layer
-                // Replay the event so it goes through the layer system
-                keyevent_t ke = MAKE_KEYEVENT(event->key.row, event->key.col, event->pressed);
-                keyrecord_t record = {.event = ke};
-                process_record(&record);
+                // Parent is modifier: nested HR keys process as TAP
+                // We need to emit the tap WITHOUT using tap_code16, because tap_code16
+                // press+release happens too fast and might not work with active mods
+                // Instead, emit press now and release later when we find it in buffer
+                on_home_run_action(event->keycode, HOME_RUN_ACTION_TAP);
 
-                // Also replay the release
+                // Skip to the release
                 i++;
                 while (i < tracked->buffer_count) {
                     if (tracked->buffer[i].keycode == event->keycode && !tracked->buffer[i].pressed) {
-                        keyevent_t ke_release = MAKE_KEYEVENT(tracked->buffer[i].key.row, tracked->buffer[i].key.col, false);
-                        keyrecord_t record_release = {.event = ke_release};
-                        process_record(&record_release);
                         i++; // Skip past the release
                         break;
                     }
@@ -466,7 +463,7 @@ bool process_home_run(uint16_t keycode, keyrecord_t* record) {
         // If state is already determined as MODIFIER
         if (home_run_tracked.state == HOME_RUN_STATE_MODIFIER) {
             // If this is another home-run key, emit its tap action with modifier active
-            if (keycode >= HOME_RUN_KEYCODES_BEGIN && keycode <= HOME_RUN_KEYCODES_END) {
+            if (keycode > HOME_RUN_KEYCODES_BEGIN && keycode < HOME_RUN_KEYCODES_END) {
                 if (record->event.pressed) {
                     on_home_run_action(keycode, HOME_RUN_ACTION_TAP);
                 }
@@ -529,7 +526,7 @@ bool process_home_run(uint16_t keycode, keyrecord_t* record) {
     }
 
     // Not currently tracking anything - check if this is a new home-run key press
-    if (record->event.pressed && keycode >= HOME_RUN_KEYCODES_BEGIN && keycode <= HOME_RUN_KEYCODES_END) {
+    if (record->event.pressed && keycode > HOME_RUN_KEYCODES_BEGIN && keycode < HOME_RUN_KEYCODES_END) {
         // Start tracking this home-run key
         uint16_t now = timer_read();
         home_run_tracked.active = true;
