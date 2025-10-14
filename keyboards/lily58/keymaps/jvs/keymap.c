@@ -68,54 +68,60 @@ enum custom_keycodes {
 #include "home_run.h"
 #include "follower.h"
 
-// Follower expansions - ordered for longest-match-first
+// Follower expansions - MUST be sorted longest input first for correct matching!
 const follower_expansion_t follower_expansions[] = {
-    // Git commands
+    // Length 13
     FOLLOWER_EXPANSION("gap", "git add -p\\n"),
 
-    // Multi-character word expansions (digits)
-    FOLLOWER_EXPANSION("three", "3"),
-    FOLLOWER_EXPANSION("seven", "7"),
-    FOLLOWER_EXPANSION("eight", "8"),
-    FOLLOWER_EXPANSION("four", "4"),
-    FOLLOWER_EXPANSION("five", "5"),
-    FOLLOWER_EXPANSION("nine", "9"),
-    FOLLOWER_EXPANSION("zero", "0"),
-    FOLLOWER_EXPANSION("one", "1"),
-    FOLLOWER_EXPANSION("two", "2"),
-    FOLLOWER_EXPANSION("six", "6"),
-
-    // Multi-character symbol expansions
+    // Length 9
     FOLLOWER_EXPANSION("semicolon", ";"),
+
+    // Length 8
     FOLLOWER_EXPANSION("lsquare", "["),
     FOLLOWER_EXPANSION("rsquare", "]"),
+
+    // Length 6
     FOLLOWER_EXPANSION("bslash", "\\"),
     FOLLOWER_EXPANSION("fslash", "/"),
     FOLLOWER_EXPANSION("dollar", "$"),
     FOLLOWER_EXPANSION("single", "'"),
     FOLLOWER_EXPANSION("double", "\""),
+
+    // Length 5
+    FOLLOWER_EXPANSION("three", "3"),
+    FOLLOWER_EXPANSION("seven", "7"),
+    FOLLOWER_EXPANSION("eight", "8"),
     FOLLOWER_EXPANSION("colon", ":"),
     FOLLOWER_EXPANSION("comma", ","),
     FOLLOWER_EXPANSION("tilde", "~"),
     FOLLOWER_EXPANSION("minus", "-"),
-    FOLLOWER_EXPANSION("dot", "."),
     FOLLOWER_EXPANSION("under", "_"),
     FOLLOWER_EXPANSION("caret", "^"),
+    FOLLOWER_EXPANSION("lcurl", "{"),
+    FOLLOWER_EXPANSION("rcurl", "}"),
+
+    // Length 4
+    FOLLOWER_EXPANSION("four", "4"),
+    FOLLOWER_EXPANSION("five", "5"),
+    FOLLOWER_EXPANSION("nine", "9"),
+    FOLLOWER_EXPANSION("zero", "0"),
+    FOLLOWER_EXPANSION("eqeq", "=="),
+    FOLLOWER_EXPANSION("plus", "+"),
+    FOLLOWER_EXPANSION("dash", "-"),
+    FOLLOWER_EXPANSION("star", "*"),
     FOLLOWER_EXPANSION("mult", "*"),
     FOLLOWER_EXPANSION("pipe", "|"),
     FOLLOWER_EXPANSION("bang", "!"),
     FOLLOWER_EXPANSION("hash", "#"),
     FOLLOWER_EXPANSION("pcnt", "%"),
-    FOLLOWER_EXPANSION("eqeq", "=="),
-    FOLLOWER_EXPANSION("plus", "+"),
-    FOLLOWER_EXPANSION("dash", "-"),
-    FOLLOWER_EXPANSION("star", "*"),
-    FOLLOWER_EXPANSION("lcurl", "{"),
-    FOLLOWER_EXPANSION("rcurl", "}"),
     FOLLOWER_EXPANSION("tick", "`"),
     FOLLOWER_EXPANSION("semi", ";"),
 
-    // Short abbreviations (2-3 chars)
+    // Length 3
+    FOLLOWER_EXPANSION("one", "1"),
+    FOLLOWER_EXPANSION("two", "2"),
+    FOLLOWER_EXPANSION("six", "6"),
+    FOLLOWER_EXPANSION("dot", "."),
     FOLLOWER_EXPANSION("ttt", "```"),
     FOLLOWER_EXPANSION("lsq", "["),
     FOLLOWER_EXPANSION("rsq", "]"),
@@ -129,7 +135,7 @@ const follower_expansion_t follower_expansions[] = {
     FOLLOWER_EXPANSION("pip", "|"),
     FOLLOWER_EXPANSION("sem", ";"),
 
-    // Very short abbreviations (2 chars)
+    // Length 2
     FOLLOWER_EXPANSION("ne", "!="),
     FOLLOWER_EXPANSION("ge", ">="),
     FOLLOWER_EXPANSION("le", "<="),

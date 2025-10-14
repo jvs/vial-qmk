@@ -472,25 +472,8 @@ bool process_home_run(uint16_t keycode, keyrecord_t* record) {
         // State is UNKNOWN - ALWAYS buffer event FIRST
         home_run_buffer_add(&home_run_tracked, keycode, record->event.pressed, record->event.key, timer_read());
 
-        // NOW check if we can determine the state from what we've buffered
+        // Track overlap for timing detection
         if (record->event.pressed) {
-            // Check for same-hand roll (immediate resolution for opposite-hand HR keys)
-            if (home_run_tracked.requires_opposite_hand && same_hand(home_run_tracked.home_key, record->event.key)) {
-                // Immediately resolve as normal key
-                home_run_tracked.state = HOME_RUN_STATE_NORMAL;
-                home_run_finalize_state(&home_run_tracked);
-
-                // Check if flush switched tracking to a nested key
-                if (home_run_tracked.active) {
-                    // Still tracking (flush found nested HR key) - continue processing
-                    // Fall through to overlap detection and timing checks below
-                } else {
-                    // Fully resolved and cleared
-                    return false; // Event was buffered and flushed
-                }
-            }
-
-            // Track for overlap detection
             if (!home_run_tracked.other_key_pressed) {
                 home_run_tracked.other_key_pressed = true;
                 home_run_tracked.other_keycode = keycode;
@@ -505,7 +488,8 @@ bool process_home_run(uint16_t keycode, keyrecord_t* record) {
             }
         }
 
-        // Check if we can determine the state now from timing
+        // NOW check if we can interpret the HR key
+        // Check timing first
         if (home_run_check_state(&home_run_tracked)) {
             home_run_finalize_state(&home_run_tracked);
 
@@ -514,7 +498,23 @@ bool process_home_run(uint16_t keycode, keyrecord_t* record) {
             if (home_run_tracked.state == HOME_RUN_STATE_NORMAL) {
                 home_run_clear_tracked(&home_run_tracked);
             }
-            // If MODIFIER, tracking continues until key is released
+            return false;
+        }
+
+        // Check for same-hand roll (only for opposite-hand HR keys)
+        if (record->event.pressed &&
+            home_run_tracked.requires_opposite_hand &&
+            same_hand(home_run_tracked.home_key, record->event.key)) {
+            // Immediately resolve as normal key
+            home_run_tracked.state = HOME_RUN_STATE_NORMAL;
+            home_run_finalize_state(&home_run_tracked);
+
+            // Check if flush switched tracking to a nested key
+            if (!home_run_tracked.active) {
+                // Fully resolved and cleared
+                return false;
+            }
+            // Still tracking nested key - fall through
         }
 
         return false; // Event is buffered, don't process normally

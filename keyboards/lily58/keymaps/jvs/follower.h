@@ -118,16 +118,15 @@ void follower_track_key(uint16_t keycode, keyrecord_t* record) {
 }
 
 // Process follower key press - returns true if expansion was performed
+// NOTE: Assumes expansions array is sorted longest-input-first!
 bool follower_process(const follower_expansion_t* expansions, size_t num_expansions) {
-    // Find longest matching expansion
+    // Find first (longest) matching expansion
     int best_match = -1;
-    size_t best_length = 0;
 
     for (size_t i = 0; i < num_expansions; i++) {
-        size_t input_len = strlen(expansions[i].input);
-        if (input_len > best_length && follower_ends_with(expansions[i].input)) {
+        if (follower_ends_with(expansions[i].input)) {
             best_match = i;
-            best_length = input_len;
+            break;  // Found match, and it's the longest due to sorted array
         }
     }
 
