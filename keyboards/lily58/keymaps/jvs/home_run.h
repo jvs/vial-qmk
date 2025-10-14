@@ -465,10 +465,12 @@ bool process_home_run(uint16_t keycode, keyrecord_t* record) {
 
         // If state is already determined as MODIFIER
         if (home_run_tracked.state == HOME_RUN_STATE_MODIFIER) {
-            // If this is another home-run key, let it process through the layer
-            // (it will act as its tap behavior on the active layer)
+            // If this is another home-run key, emit its tap action with modifier active
             if (keycode >= HOME_RUN_KEYCODES_BEGIN && keycode <= HOME_RUN_KEYCODES_END) {
-                return true; // Let it process on the active layer
+                if (record->event.pressed) {
+                    on_home_run_action(keycode, HOME_RUN_ACTION_TAP);
+                }
+                return false; // We handled it
             }
             // Regular keys process normally with modifier active
             return true;
@@ -498,11 +500,12 @@ bool process_home_run(uint16_t keycode, keyrecord_t* record) {
         if (home_run_check_state(&home_run_tracked)) {
             home_run_finalize_state(&home_run_tracked);
 
-            // If it was determined as MODIFIER, keep tracking (don't clear)
-            // so we can properly release it later
+            // If it was determined as NORMAL, we're done (may have switched to nested key)
             if (home_run_tracked.state == HOME_RUN_STATE_NORMAL) {
                 home_run_clear_tracked(&home_run_tracked);
             }
+
+            // Buffer was flushed (events were replayed), we're done processing this event
             return false;
         }
 

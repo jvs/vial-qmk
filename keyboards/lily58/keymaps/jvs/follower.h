@@ -98,7 +98,10 @@ static bool keycode_to_char(uint16_t keycode, bool shifted, char* out) {
 }
 
 // Track keypresses - call this from process_record_user before other processing
-void follower_track_key(uint16_t keycode, keyrecord_t* record) {
+// home_run_tap_keycode is defined in follower_track_key_impl (see keymap.c)
+void follower_track_key(uint16_t keycode, keyrecord_t* record);
+
+void follower_track_key_impl(uint16_t keycode, keyrecord_t* record, uint16_t (*get_tap_keycode)(uint16_t)) {
     if (!record->event.pressed) {
         return;  // Only track on key press
     }
@@ -109,10 +112,19 @@ void follower_track_key(uint16_t keycode, keyrecord_t* record) {
         return;
     }
 
+    // Check if this is a home run keycode and get the tap keycode
+    uint16_t actual_keycode = keycode;
+    if (get_tap_keycode) {
+        uint16_t tap_kc = get_tap_keycode(keycode);
+        if (tap_kc != KC_NO) {
+            actual_keycode = tap_kc;
+        }
+    }
+
     // Try to convert keycode to character
     bool shifted = (get_mods() & MOD_MASK_SHIFT) != 0;
     char c;
-    if (keycode_to_char(keycode, shifted, &c)) {
+    if (keycode_to_char(actual_keycode, shifted, &c)) {
         follower_add_char(c);
     }
 }

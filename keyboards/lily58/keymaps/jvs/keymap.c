@@ -338,6 +338,25 @@ bool home_run_requires_opposite_hand(uint16_t keycode) {
     }
 }
 
+// Helper for follower to get tap keycode from home run keycodes
+static uint16_t get_home_run_tap_keycode(uint16_t keycode) {
+    switch (keycode) {
+        case HR_C: return KC_C;
+        case HR_X: return KC_X;
+        case HR_D: return KC_D;
+        case HR_F: return KC_F;
+        case HR_M: return KC_M;
+        case HR_COMM: return KC_COMM;
+        case HR_SCLN: return KC_SCLN;
+        default: return KC_NO;
+    }
+}
+
+// Implement follower_track_key with home run awareness
+void follower_track_key(uint16_t keycode, keyrecord_t* record) {
+    follower_track_key_impl(keycode, record, get_home_run_tap_keycode);
+}
+
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     // Track all keypresses for follower system
     follower_track_key(keycode, record);
