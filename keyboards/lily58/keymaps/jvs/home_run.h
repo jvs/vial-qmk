@@ -436,11 +436,16 @@ bool process_home_run(uint16_t keycode, keyrecord_t* record) {
         // Check if this is the release of the tracked home-run key
         if (!record->event.pressed && keycode == home_run_tracked.keycode) {
             if (home_run_tracked.state == HOME_RUN_STATE_UNKNOWN) {
-                // Released before any decision was made - it's a normal tap
-                home_run_tracked.state = HOME_RUN_STATE_NORMAL;
-
-                // Buffer the release
+                // Buffer the release FIRST
                 home_run_buffer_add(&home_run_tracked, keycode, record->event.pressed, record->event.key, timer_read());
+
+                // NOW check timing to determine state
+                home_run_check_state(&home_run_tracked);
+
+                // If still unknown after timing check, it's a normal tap
+                if (home_run_tracked.state == HOME_RUN_STATE_UNKNOWN) {
+                    home_run_tracked.state = HOME_RUN_STATE_NORMAL;
+                }
 
                 // Flush buffer with appropriate interpretation
                 home_run_finalize_state(&home_run_tracked);
