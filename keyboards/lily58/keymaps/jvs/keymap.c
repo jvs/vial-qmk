@@ -312,7 +312,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 // Home Run Modifiers configuration
 void on_home_run_action(uint16_t keycode, home_run_action_t action) {
     // Track taps for follower system
-    if (action == HOME_RUN_TAP) {
+    if (action == HOME_RUN_ACTION_TAP) {
         switch (keycode) {
             case HR_C: follower_track_tap(KC_C); break;
             case HR_X: follower_track_tap(KC_X); break;
