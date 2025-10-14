@@ -198,3 +198,28 @@ Similar to momentary layer mode, but with "sticky" behavior:
 4. **Buffer or process, never both:** An event is either buffered (when state is UNKNOWN) or processed immediately (when state is MODIFIER or when not tracking). Never buffer an event then also process it.
 
 5. **Replay during recursion:** When resolving a nested home-run key from the buffer during flush, the system must replay any events that occurred between the nested key's press and release.
+
+6. **ALWAYS BUFFER FIRST:** This is the most important rule. When state is UNKNOWN and an event arrives:
+   - **FIRST:** Add the event to the buffer
+   - **SECOND:** Check if we can now determine the state (same-hand detection, timing rules, etc.)
+   - **THIRD:** If state determined, flush buffer with interpretation
+
+   **NEVER** examine an event, make a decision, and THEN try to buffer it. The buffer must contain ALL events that occurred while state was UNKNOWN, including the event that triggered the state resolution. Otherwise events will be lost.
+
+   Example of the WRONG approach:
+   ```c
+   if (same_hand_detected) {
+       resolve_as_normal();
+       flush_buffer();  // BUG: Current event not in buffer yet!
+       buffer_add(event);  // Too late!
+   }
+   ```
+
+   Example of the CORRECT approach:
+   ```c
+   buffer_add(event);  // FIRST: Always buffer
+   if (same_hand_detected) {
+       resolve_as_normal();
+       flush_buffer();  // Buffer contains ALL events including current one
+   }
+   ```
