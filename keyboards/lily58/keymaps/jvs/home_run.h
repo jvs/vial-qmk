@@ -479,8 +479,15 @@ bool process_home_run(uint16_t keycode, keyrecord_t* record) {
                 // Immediately resolve as normal key
                 home_run_tracked.state = HOME_RUN_STATE_NORMAL;
                 home_run_finalize_state(&home_run_tracked);
-                home_run_clear_tracked(&home_run_tracked);
-                return false; // Event was buffered and flushed
+
+                // Check if flush switched tracking to a nested key
+                if (home_run_tracked.active) {
+                    // Still tracking (flush found nested HR key) - continue processing
+                    // Fall through to overlap detection and timing checks below
+                } else {
+                    // Fully resolved and cleared
+                    return false; // Event was buffered and flushed
+                }
             }
 
             // Track for overlap detection
