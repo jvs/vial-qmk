@@ -11,8 +11,11 @@ enum layer_number {
 };
 
 enum custom_keycodes {
+    // Follower key for text expansion
+    FOLLOWER_KEY = SAFE_RANGE,
+
     // Custom window switching
-    WIN_SWITCH = SAFE_RANGE,
+    WIN_SWITCH,
 
     OS_CYCLE,
 
@@ -63,6 +66,108 @@ enum custom_keycodes {
 };
 
 #include "home_run.h"
+#include "follower.h"
+
+// Follower expansions - ordered for longest-match-first
+const follower_expansion_t follower_expansions[] = {
+    // Git commands
+    FOLLOWER_EXPANSION("gap", "git add -p\\n"),
+
+    // Multi-character word expansions (digits)
+    FOLLOWER_EXPANSION("three", "3"),
+    FOLLOWER_EXPANSION("seven", "7"),
+    FOLLOWER_EXPANSION("eight", "8"),
+    FOLLOWER_EXPANSION("four", "4"),
+    FOLLOWER_EXPANSION("five", "5"),
+    FOLLOWER_EXPANSION("nine", "9"),
+    FOLLOWER_EXPANSION("zero", "0"),
+    FOLLOWER_EXPANSION("one", "1"),
+    FOLLOWER_EXPANSION("two", "2"),
+    FOLLOWER_EXPANSION("six", "6"),
+
+    // Multi-character symbol expansions
+    FOLLOWER_EXPANSION("semicolon", ";"),
+    FOLLOWER_EXPANSION("lsquare", "["),
+    FOLLOWER_EXPANSION("rsquare", "]"),
+    FOLLOWER_EXPANSION("bslash", "\\"),
+    FOLLOWER_EXPANSION("fslash", "/"),
+    FOLLOWER_EXPANSION("dollar", "$"),
+    FOLLOWER_EXPANSION("single", "'"),
+    FOLLOWER_EXPANSION("double", "\""),
+    FOLLOWER_EXPANSION("colon", ":"),
+    FOLLOWER_EXPANSION("comma", ","),
+    FOLLOWER_EXPANSION("tilde", "~"),
+    FOLLOWER_EXPANSION("minus", "-"),
+    FOLLOWER_EXPANSION("dot", "."),
+    FOLLOWER_EXPANSION("under", "_"),
+    FOLLOWER_EXPANSION("caret", "^"),
+    FOLLOWER_EXPANSION("mult", "*"),
+    FOLLOWER_EXPANSION("pipe", "|"),
+    FOLLOWER_EXPANSION("bang", "!"),
+    FOLLOWER_EXPANSION("hash", "#"),
+    FOLLOWER_EXPANSION("pcnt", "%"),
+    FOLLOWER_EXPANSION("eqeq", "=="),
+    FOLLOWER_EXPANSION("plus", "+"),
+    FOLLOWER_EXPANSION("dash", "-"),
+    FOLLOWER_EXPANSION("star", "*"),
+    FOLLOWER_EXPANSION("lcurl", "{"),
+    FOLLOWER_EXPANSION("rcurl", "}"),
+    FOLLOWER_EXPANSION("tick", "`"),
+    FOLLOWER_EXPANSION("semi", ";"),
+
+    // Short abbreviations (2-3 chars)
+    FOLLOWER_EXPANSION("ttt", "```"),
+    FOLLOWER_EXPANSION("lsq", "["),
+    FOLLOWER_EXPANSION("rsq", "]"),
+    FOLLOWER_EXPANSION("til", "~"),
+    FOLLOWER_EXPANSION("dub", "\""),
+    FOLLOWER_EXPANSION("col", ":"),
+    FOLLOWER_EXPANSION("com", ","),
+    FOLLOWER_EXPANSION("dol", "$"),
+    FOLLOWER_EXPANSION("per", "%"),
+    FOLLOWER_EXPANSION("amp", "&"),
+    FOLLOWER_EXPANSION("pip", "|"),
+    FOLLOWER_EXPANSION("sem", ";"),
+
+    // Very short abbreviations (2 chars)
+    FOLLOWER_EXPANSION("ne", "!="),
+    FOLLOWER_EXPANSION("ge", ">="),
+    FOLLOWER_EXPANSION("le", "<="),
+    FOLLOWER_EXPANSION("ee", "=="),
+    FOLLOWER_EXPANSION("pl", "+"),
+    FOLLOWER_EXPANSION("mi", "-"),
+    FOLLOWER_EXPANSION("mn", "-"),
+    FOLLOWER_EXPANSION("da", "-"),
+    FOLLOWER_EXPANSION("un", "_"),
+    FOLLOWER_EXPANSION("us", "_"),
+    FOLLOWER_EXPANSION("ca", "^"),
+    FOLLOWER_EXPANSION("am", "&"),
+    FOLLOWER_EXPANSION("mu", "*"),
+    FOLLOWER_EXPANSION("st", "*"),
+    FOLLOWER_EXPANSION("lp", "("),
+    FOLLOWER_EXPANSION("rp", ")"),
+    FOLLOWER_EXPANSION("pi", "|"),
+    FOLLOWER_EXPANSION("bs", "\\"),
+    FOLLOWER_EXPANSION("fs", "/"),
+    FOLLOWER_EXPANSION("ex", "!"),
+    FOLLOWER_EXPANSION("at", "@"),
+    FOLLOWER_EXPANSION("hs", "#"),
+    FOLLOWER_EXPANSION("ha", "#"),
+    FOLLOWER_EXPANSION("do", "$"),
+    FOLLOWER_EXPANSION("pc", "%"),
+    FOLLOWER_EXPANSION("eq", "="),
+    FOLLOWER_EXPANSION("lc", "{"),
+    FOLLOWER_EXPANSION("rc", "}"),
+    FOLLOWER_EXPANSION("ls", "["),
+    FOLLOWER_EXPANSION("rs", "]"),
+    FOLLOWER_EXPANSION("sc", ";"),
+    FOLLOWER_EXPANSION("sq", "'"),
+    FOLLOWER_EXPANSION("dq", "\""),
+    FOLLOWER_EXPANSION("lt", "<"),
+    FOLLOWER_EXPANSION("gt", ">"),
+    FOLLOWER_EXPANSION("bt", "`"),
+};
+#define NUM_FOLLOWER_EXPANSIONS (sizeof(follower_expansions) / sizeof(follower_expansion_t))
 
 // Shorter aliases for readability
 #define XX      KC_NO    // Disabled key
@@ -130,7 +235,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  * |------+------+------+------+------+------|   B   |    |    B  |------+------+------+------+------+------|
  * | LGUI | LAlt |   Z  |   X  |   C  |   V  |-------|    |-------|   N  | M/RA |,/RCtl|   .  |   /  |RShift|
  * `-----------------------------------------/       /     \      \-----------------------------------------'
- *                   |Symbol|Lower |Leader| / Space /       \  Tab \  |Space |Raise |Number|
+ *                   |Symbol|Lower |Leader| /Follower      \  Tab \  |Space |Raise |Number|
  *                   |      |      |Shift |/       /         \      \ |      |      |      |
  *                   `----------------------------'           '------''--------------------'
  */
@@ -141,7 +246,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   KC_TAB,  KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,                     KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,    KC_MINS,
   KC_LCTL, KC_A,    KC_S,    HR_D,   HR_F,   KC_G,                     KC_H,    KC_J,    KC_K,    KC_L,    HR_SCLN,KC_QUOT,
   KC_LGUI, KC_LALT, KC_Z,    HR_X,    HR_C,    KC_V,  KC_B,       KC_B,  KC_N,    HR_M,    HR_COMM, KC_DOT,  KC_SLSH, KC_RSFT,
-                        L_SYM,    L_LOW,   KC_LSFT,   KC_SPC,  KC_TAB,  KC_SPC,  L_RAS,   L_MISC
+                        L_SYM,    L_LOW,   KC_LSFT,   FOLLOWER_KEY,  KC_TAB,  KC_SPC,  L_RAS,   L_MISC
 ),
 
 [_LOWER] = LAYOUT(
@@ -149,7 +254,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   XX,      XX,      XX,      XX,      XX,      KC_TILD,                  KC_TAB,  KC_PGUP, KC_PGDN, XX,      XX,      XX,
   XX,      OM_LGUI, OM_LSFT, OM_LCTL, OM_LALT, XX,                       KC_LEFT, KC_DOWN, KC_UP,   KC_RGHT, XX,      XX,
   XX,      XX,      OS_UNDO, OS_CUT,  OS_COPY, OS_PASTE, XX,    KC_CAPS, XX,      KC_HOME, KC_END,  KC_RBRC, XX,      XX,
-                        XX,      __,      XX,       XX,             XX,  KC_UNDS, XX,      XX
+                        XX,      __,      XX,       __,             XX,  KC_UNDS, XX,      XX
 ),
 
 [_RAISE] = LAYOUT(
@@ -157,7 +262,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   XX,      KC_LBRC, KC_RBRC, KC_LCBR, KC_RCBR, A(KC_T),                       XX,      XX,      XX,      XX,      XX,      XX,
   XX,      KC_PLUS, KC_EQL,  G(S(KC_TAB)), G(KC_TAB), XX,                     OSM(MOD_LALT), OSM(MOD_LCTL), OSM(MOD_RSFT), OSM(MOD_RGUI), XX, XX,
   XX,      XX,      OS_UNDO, OS_CUT,  OS_COPY, OS_PASTE, XX,      XX,        XX,      XX,      XX,      XX,      XX,      XX,
-                             XX,      XX,      XX,      XX,            XX,      XX,      __,      XX
+                             XX,      XX,      XX,      __,            XX,      XX,      __,      XX
 ),
 
 // NUMBER - Function keys and numpad layout with one-shot mods
@@ -184,7 +289,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   XX,      XX,      XX,      XX,      XX,      XX,                            XX,      XX,      XX,      XX,      XX,      XX,
   XX,      XX,      XX,      XX,      XX,      XX,                            CMP_ASSIGN, CMP_EQ, CMP_NE, CMP_IN,  CMP_AND, XX,
   XX,      XX,      XX,      XX,      XX,      XX,      XX,      XX,         XX,      CMP_LE,  CMP_LT,  CMP_GT,  CMP_ISN, XX,
-                             XX,      XX,      XX,      XX,            XX,      XX,      XX,      XX
+                             XX,      XX,      XX,      __,            XX,      XX,      XX,      XX
 ),
 
 // MATH - Python math operators (activated by holding X)
@@ -193,7 +298,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   XX,      XX,      XX,      XX,      XX,      XX,                            XX,      XX,         XX,         XX,         XX,         XX,
   XX,      XX,      XX,      XX,      XX,      XX,                            MATH_ADD, MATH_SUB, MATH_MUL,   MATH_DIV,   XX,         XX,
   XX,      XX,      XX,      XX,      XX,      XX,      XX,      XX,         XX,      MATH_FDIV,  MATH_MOD,   MATH_POW,   XX,         XX,
-                             XX,      XX,      XX,      XX,            XX,      XX,      XX,        XX
+                             XX,      XX,      XX,      __,            XX,      XX,      XX,        XX
 ),
 
 };
@@ -228,12 +333,18 @@ bool home_run_requires_opposite_hand(uint16_t keycode) {
 }
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+    // Track all keypresses for follower system
+    follower_track_key(keycode, record);
+
     if (!process_home_run(keycode, record)) {
         return false;
     }
 
     if (record->event.pressed) {
         switch (keycode) {
+            case FOLLOWER_KEY:
+                follower_process(follower_expansions, NUM_FOLLOWER_EXPANSIONS);
+                return false;
             // OS-aware window switching
             case WIN_SWITCH:
                 if (current_os == OS_MAC) {
