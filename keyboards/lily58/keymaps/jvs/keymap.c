@@ -8,6 +8,8 @@ enum layer_number {
     _SYMBOL,
     _COMPARE,
     _MATH,
+    _LAYER_F,
+    _LAYER_D,
 };
 
 enum custom_keycodes {
@@ -55,13 +57,15 @@ enum custom_keycodes {
 
     // home_run keycodes after our custom ones
     HOME_RUN_KEYCODES_BEGIN,
-    HR_C,    // C with _COMPARE menu layer (opposite-hand)
-    HR_X,    // X with _MATH menu layer (opposite-hand)
-    HR_D,    // D with LCtrl hold (opposite-hand)
-    HR_F,    // F with LAlt hold (opposite-hand)
-    HR_M,    // M with RAlt hold (opposite-hand)
-    HR_COMM, // , with RCtrl hold (opposite-hand)
+    HR_A,    // A with LShift hold (opposite-hand)
     HR_SCLN, // ; with RShift hold (opposite-hand)
+    HR_X,    // X with LCtrl hold (opposite-hand)
+    HR_COMM, // , with RCtrl hold (opposite-hand)
+    HR_C,    // C with LAlt hold (opposite-hand)
+    HR_M,    // M with LAlt hold (opposite-hand)
+    HR_SLSH, // / with RGui hold (opposite-hand)
+    HR_F,    // F with _LAYER_F menu layer (opposite-hand)
+    HR_D,    // D with _LAYER_D menu layer (opposite-hand)
     HOME_RUN_KEYCODES_END,
 };
 
@@ -208,25 +212,13 @@ static void toggle_os(void) {
 
 // Combos
 enum combo_events {
-    DF_ESC,
-    ALT_ESC_WIN,
     UI_BSPC,      // Right hand: U+I for backspace
-    OP_DEL,       // Right hand: O+P for delete
-    MCOMM_ENT,    // Right hand: M+comma for enter
 };
 
-const uint16_t PROGMEM df_combo[] = {HR_D, HR_F, COMBO_END};
-const uint16_t PROGMEM alt_esc_combo[] = {KC_LALT, KC_ESC, COMBO_END};
 const uint16_t PROGMEM ui_combo[] = {KC_U, KC_I, COMBO_END};
-const uint16_t PROGMEM op_combo[] = {KC_O, KC_P, COMBO_END};
-const uint16_t PROGMEM mcomm_combo[] = {HR_M, HR_COMM, COMBO_END};
 
 combo_t key_combos[COMBO_COUNT] = {
-    [DF_ESC] = COMBO(df_combo, KC_ESC),
-    [ALT_ESC_WIN] = COMBO(alt_esc_combo, WIN_SWITCH),
     [UI_BSPC] = COMBO(ui_combo, KC_BSPC),
-    [OP_DEL] = COMBO(op_combo, KC_DEL),
-    [MCOMM_ENT] = COMBO(mcomm_combo, KC_ENT),
 };
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
@@ -237,9 +229,9 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  * |------+------+------+------+------+------|                    |------+------+------+------+------+------|
  * | Tab  |   Q  |   W  |   E  |   R  |   T  |                    |   Y  |   U  |   I  |   O  |   P  |  -   |
  * |------+------+------+------+------+------|                    |------+------+------+------+------+------|
- * |LCtrl |   A  |   S  | D/LC | F/LA |   G  |-------.    ,-------|   H  |   J  |   K  |   L  | ;/RS |  '   |
+ * |LCtrl | A/LS |   S  | D/LD | F/LF |   G  |-------.    ,-------|   H  |   J  |   K  |   L  | ;/RS |  '   |
  * |------+------+------+------+------+------|   B   |    |    B  |------+------+------+------+------+------|
- * | LGUI | LAlt |   Z  |   X  |   C  |   V  |-------|    |-------|   N  | M/RA |,/RCtl|   .  |   /  |RShift|
+ * | LGUI | LAlt |   Z  | X/LC | C/LA |   V  |-------|    |-------|   N  | M/LA |,/RC  |   .  | //RG |RShift|
  * `-----------------------------------------/       /     \      \-----------------------------------------'
  *                   |Symbol|Lower |Leader| /Follower      \  Tab \  |Space |Raise |Number|
  *                   |      |      |Shift |/       /         \      \ |      |      |      |
@@ -250,8 +242,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 [_MAIN] = LAYOUT(
   KC_ESC,  KC_1,    KC_2,    KC_3,    KC_4,    KC_5,                     KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    KC_BSLS,
   KC_TAB,  KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,                     KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,    KC_MINS,
-  KC_LCTL, KC_A,    KC_S,    HR_D,   HR_F,   KC_G,                     KC_H,    KC_J,    KC_K,    KC_L,    HR_SCLN,KC_QUOT,
-  KC_LGUI, KC_LALT, KC_Z,    HR_X,    HR_C,    KC_V,  KC_B,       KC_B,  KC_N,    HR_M,    HR_COMM, KC_DOT,  KC_SLSH, KC_RSFT,
+  KC_LCTL, HR_A,    KC_S,    HR_D,    HR_F,    KC_G,                     KC_H,    KC_J,    KC_K,    KC_L,    HR_SCLN, KC_QUOT,
+  KC_LGUI, KC_LALT, KC_Z,    HR_X,    HR_C,    KC_V,  KC_B,       KC_B,  KC_N,    HR_M,    HR_COMM, KC_DOT,  HR_SLSH, KC_RSFT,
                         L_SYM,    L_LOW,   KC_LSFT,   FOLLOWER_KEY,  KC_TAB,  KC_SPC,  L_RAS,   L_MISC
 ),
 
@@ -307,6 +299,24 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
                              XX,      XX,      XX,      __,            XX,      XX,      XX,        XX
 ),
 
+// LAYER_F - Symbol layer (activated by holding F)
+[_LAYER_F] = LAYOUT(
+  XX,      XX,      XX,      XX,      XX,      XX,                            XX,      XX,      XX,      XX,      XX,      XX,
+  XX,      XX,      XX,      XX,      XX,      XX,                            KC_GRV,  KC_TILD, KC_ASTR, KC_PERC, KC_PLUS, XX,
+  XX,      XX,      XX,      XX,      XX,      XX,                            KC_BSPC, KC_ESC,  KC_ENT,  KC_DEL,  KC_QUOT, XX,
+  XX,      XX,      XX,      XX,      XX,      XX,      XX,      XX,         KC_EQL,  KC_LCBR, KC_RCBR, KC_CIRC, KC_DLR,  XX,
+                             XX,      XX,      XX,      __,            XX,      XX,      XX,      XX
+),
+
+// LAYER_D - Bracket/comparison layer (activated by holding D)
+[_LAYER_D] = LAYOUT(
+  XX,      XX,      XX,      XX,      XX,      XX,                            XX,      XX,      XX,      XX,      XX,      XX,
+  XX,      XX,      XX,      XX,      XX,      XX,                            KC_GT,   KC_LCBR, KC_RCBR, XX,      XX,      XX,
+  XX,      XX,      XX,      XX,      XX,      XX,                            KC_EQL,  KC_LPRN, KC_RPRN, XX,      XX,      XX,
+  XX,      XX,      XX,      XX,      XX,      XX,      XX,      XX,         KC_LT,   KC_LBRC, KC_RBRC, XX,      XX,      XX,
+                             XX,      XX,      XX,      __,            XX,      XX,      XX,      XX
+),
+
 };
 
 // Home Run Modifiers configuration
@@ -314,37 +324,43 @@ void on_home_run_action(uint16_t keycode, home_run_action_t action) {
     // Track taps for follower system
     if (action == HOME_RUN_ACTION_TAP) {
         switch (keycode) {
-            case HR_C: follower_track_tap(KC_C); break;
-            case HR_X: follower_track_tap(KC_X); break;
-            case HR_D: follower_track_tap(KC_D); break;
-            case HR_F: follower_track_tap(KC_F); break;
-            case HR_M: follower_track_tap(KC_M); break;
-            case HR_COMM: follower_track_tap(KC_COMM); break;
+            case HR_A: follower_track_tap(KC_A); break;
             case HR_SCLN: follower_track_tap(KC_SCLN); break;
+            case HR_X: follower_track_tap(KC_X); break;
+            case HR_COMM: follower_track_tap(KC_COMM); break;
+            case HR_C: follower_track_tap(KC_C); break;
+            case HR_M: follower_track_tap(KC_M); break;
+            case HR_SLSH: follower_track_tap(KC_SLSH); break;
+            case HR_F: follower_track_tap(KC_F); break;
+            case HR_D: follower_track_tap(KC_D); break;
         }
     }
 
     switch (keycode) {
-        HOME_RUN_OPPOSITE_MENU_ML(HR_C, KC_C, _COMPARE)
-        HOME_RUN_OPPOSITE_MENU_ML(HR_X, KC_X, _MATH)
-        HOME_RUN_OPPOSITE_MT(HR_D, KC_D, KC_LCTL)
-        HOME_RUN_OPPOSITE_MT(HR_F, KC_F, KC_LALT)
-        HOME_RUN_OPPOSITE_MT(HR_M, KC_M, KC_RALT)
-        HOME_RUN_OPPOSITE_MT(HR_COMM, KC_COMM, KC_RCTL)
+        HOME_RUN_OPPOSITE_MT(HR_A, KC_A, KC_LSFT)
         HOME_RUN_OPPOSITE_MT(HR_SCLN, KC_SCLN, KC_RSFT)
+        HOME_RUN_OPPOSITE_MT(HR_X, KC_X, KC_LCTL)
+        HOME_RUN_OPPOSITE_MT(HR_COMM, KC_COMM, KC_RCTL)
+        HOME_RUN_OPPOSITE_MT(HR_C, KC_C, KC_LALT)
+        HOME_RUN_OPPOSITE_MT(HR_M, KC_M, KC_LALT)
+        HOME_RUN_OPPOSITE_MT(HR_SLSH, KC_SLSH, KC_RGUI)
+        HOME_RUN_OPPOSITE_MENU_ML(HR_F, KC_F, _LAYER_F)
+        HOME_RUN_OPPOSITE_MENU_ML(HR_D, KC_D, _LAYER_D)
     }
 }
 
 // Enable opposite-hand detection for all home run modifiers
 bool home_run_requires_opposite_hand(uint16_t keycode) {
     switch (keycode) {
-        case HR_C:
-        case HR_X:
-        case HR_D:
-        case HR_F:
-        case HR_M:
-        case HR_COMM:
+        case HR_A:
         case HR_SCLN:
+        case HR_X:
+        case HR_COMM:
+        case HR_C:
+        case HR_M:
+        case HR_SLSH:
+        case HR_F:
+        case HR_D:
             return true;
         default:
             return false;
